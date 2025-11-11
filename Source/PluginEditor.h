@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "EditorView.h"
 #include "RunningView.h"
+#include "NarrateLookAndFeel.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 class NarrateAudioProcessorEditor : public juce::AudioProcessorEditor
@@ -19,10 +20,12 @@ private:
     void toggleFullScreen();
     void switchToRunningView();
     void switchToEditorView();
+    void toggleTheme();
 
     NarrateAudioProcessor& processorRef;
 
     juce::TextButton fullscreenButton;
+    juce::TextButton themeToggleButton;
     bool isFullScreen = false;
     bool isStandalone = false;
 
@@ -30,6 +33,9 @@ private:
     EditorView editorView;
     RunningView runningView;
     bool showingEditor = true;
+
+    // Custom LookAndFeel
+    NarrateLookAndFeel narrateLookAndFeel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NarrateAudioProcessorEditor)
 };

@@ -6,8 +6,16 @@ NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor&
 {
     juce::ignoreUnused (processorRef);
 
+    // Apply custom LookAndFeel
+    setLookAndFeel (&narrateLookAndFeel);
+
     // Detect if running as standalone app
     isStandalone = juce::JUCEApplicationBase::isStandaloneApp();
+
+    // Setup theme toggle button
+    themeToggleButton.setButtonText ("Toggle Theme");
+    themeToggleButton.onClick = [this] { toggleTheme(); };
+    addAndMakeVisible (themeToggleButton);
 
     // Only setup fullscreen button for standalone apps
     if (isStandalone)
@@ -35,6 +43,7 @@ NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor&
 
 NarrateAudioProcessorEditor::~NarrateAudioProcessorEditor()
 {
+    setLookAndFeel (nullptr);
 }
 
 void NarrateAudioProcessorEditor::paint (juce::Graphics& g)
@@ -46,10 +55,15 @@ void NarrateAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
 
-    // Position the fullscreen button in the top-right corner (standalone only)
+    // Position buttons in the top bar
+    auto topBar = area.removeFromTop (40);
+
+    // Theme toggle button on the left
+    themeToggleButton.setBounds (topBar.removeFromLeft (120).reduced (5));
+
+    // Fullscreen button on the right (standalone only)
     if (isStandalone)
     {
-        auto topBar = area.removeFromTop (40);
         fullscreenButton.setBounds (topBar.removeFromRight (150).reduced (5));
     }
 
@@ -112,4 +126,10 @@ void NarrateAudioProcessorEditor::switchToEditorView()
     runningView.setVisible (false);
     editorView.setVisible (true);
     showingEditor = true;
+}
+
+void NarrateAudioProcessorEditor::toggleTheme()
+{
+    narrateLookAndFeel.toggleTheme();
+    repaint();
 }

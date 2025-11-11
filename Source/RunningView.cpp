@@ -34,22 +34,22 @@ void RunningView::paint (juce::Graphics& g)
     area.removeFromBottom (60); // Space for stop button
 
     // Draw all words
-    int x = 20;
-    int y = 20;
-    int lineHeight = 40;
-    int wordSpacing = 10;
+    float x = 20.0f;
+    float y = 20.0f;
+    float lineHeight = 40.0f;
+    float wordSpacing = 10.0f;
 
     g.setFont (24.0f);
 
     for (int i = 0; i < words.size(); ++i)
     {
         auto word = words[i];
-        auto wordWidth = g.getCurrentFont().getStringWidth (word);
+        auto wordWidth = g.getCurrentFont().getStringWidthFloat (word);
 
         // Wrap to next line if needed
-        if (x + wordWidth > getWidth() - 40)
+        if (x + wordWidth > static_cast<float>(getWidth()) - 40.0f)
         {
-            x = 20;
+            x = 20.0f;
             y += lineHeight;
         }
 
@@ -57,7 +57,7 @@ void RunningView::paint (juce::Graphics& g)
         if (i == currentWordIndex && isRunning)
         {
             g.setColour (juce::Colours::yellow);
-            g.fillRect (x - 5, y - 5, wordWidth + 10, 35);
+            g.fillRect (x - 5.0f, y - 5.0f, wordWidth + 10.0f, 35.0f);
             g.setColour (juce::Colours::black);
         }
         else
@@ -65,7 +65,8 @@ void RunningView::paint (juce::Graphics& g)
             g.setColour (juce::Colours::white);
         }
 
-        g.drawText (word, x, y, wordWidth, 30, juce::Justification::left);
+        g.drawText (word, juce::Rectangle<float>(x, y, wordWidth, 30.0f),
+                    juce::Justification::left);
 
         x += wordWidth + wordSpacing;
     }
