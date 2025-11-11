@@ -1,0 +1,64 @@
+# Build directories
+build/
+build-windows/
+build-mac/
+cmake-build-*/
+Builds/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+*.cmake
+!CMakeLists.txt
+
+# Compiled files
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.lib
+*.a
+*.exp
+*.pdb
+*.ilk
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.filters
+*.vcxproj.user
+.vs/
+
+# Xcode
+xcuserdata/
+*.xcworkspace
+!default.xcworkspace
+DerivedData/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Plugin formats
+*.vst3
+*.component
+*.aaxplugin
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store
