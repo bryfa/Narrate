@@ -24,7 +24,7 @@ if (-not (Test-Path "CMakeCache.txt")) {
 
 # Build the project
 Write-Host "Building project..."
-cmake --build . --config Release
+cmake --build . --config Release -- /m
 
 # Run the app if build succeeded
 if ($LASTEXITCODE -eq 0) {

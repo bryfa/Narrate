@@ -25,7 +25,7 @@ fi
 
 # Build the project
 echo "Building project..."
-cmake --build . --config Release
+cmake --build . --config Release -j$(nproc)
 
 # Run the app if build succeeded
 if [ $? -eq 0 ]; then
