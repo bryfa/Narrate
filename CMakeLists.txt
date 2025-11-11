@@ -28,10 +28,11 @@ target_sources(Narrate
         Source/PluginEditor.cpp
         Source/EditorView.cpp
         Source/RunningView.cpp
+        Source/NarrateLookAndFeel.cpp
 )
 
 # Set C++ standard
-target_compile_features(Narrate PUBLIC cxx_std_17)
+target_compile_features(Narrate PUBLIC cxx_std_20)
 
 # Add JUCE modules
 target_link_libraries(Narrate

@@ -82,7 +82,7 @@ Foundation: `juce_core`, `juce_data_structures`, `juce_events`
 
 ### Key Configuration
 
-- C++ Standard: C++17
+- C++ Standard: C++20
 - Web browser disabled (`JUCE_WEB_BROWSER=0`)
 - CURL disabled (`JUCE_USE_CURL=0`)
 - VST2 compatibility disabled
