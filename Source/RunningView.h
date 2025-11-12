@@ -4,6 +4,7 @@
 #include "NarrateDataModel.h"
 #include "TimelineEventManager.h"
 #include "RenderStrategy.h"
+#include "HighlightSettings.h"
 #include <functional>
 #include <memory>
 
@@ -24,6 +25,11 @@ public:
 
     // Set the rendering strategy
     void setRenderStrategy (std::unique_ptr<RenderStrategy> strategy);
+
+    // Highlight settings management
+    void setHighlightSettings (const HighlightSettings& newSettings);
+    HighlightSettings& getHighlightSettings() { return highlightSettings; }
+    const HighlightSettings& getHighlightSettings() const { return highlightSettings; }
 
     // Set a callback for when the Stop button is clicked
     std::function<void()> onStopClicked;
@@ -48,6 +54,9 @@ private:
 
     // Rendering strategy
     std::unique_ptr<RenderStrategy> renderStrategy;
+
+    // Highlight settings (configurable)
+    HighlightSettings highlightSettings;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RunningView)
 };

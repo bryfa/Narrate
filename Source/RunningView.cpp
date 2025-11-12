@@ -76,8 +76,16 @@ void RunningView::start (const Narrate::NarrateProject& newProject)
         repaint();
     };
 
-    // Build the timeline of events
-    eventManager.buildTimeline (project);
+    eventManager.onHighlightEnd = [this] (int clipIndex, int wordIndex)
+    {
+        // Clear highlight when it ends
+        if (currentWordIndex == wordIndex)
+            currentWordIndex = -1;
+        repaint();
+    };
+
+    // Build the timeline of events with current highlight settings
+    eventManager.buildTimeline (project, highlightSettings);
 
     startTimer (timerIntervalMs);  // ~60fps
     repaint();
@@ -97,6 +105,17 @@ void RunningView::setRenderStrategy (std::unique_ptr<RenderStrategy> strategy)
     repaint();
 }
 
+void RunningView::setHighlightSettings (const HighlightSettings& newSettings)
+{
+    highlightSettings = newSettings;
+
+    // Rebuild timeline if project is loaded
+    if (project.getNumClips() > 0 && isRunning)
+    {
+        eventManager.buildTimeline (project, highlightSettings);
+    }
+}
+
 void RunningView::timerCallback()
 {
     if (!isRunning)
@@ -108,10 +127,8 @@ void RunningView::timerCallback()
     // Advance time
     currentTime += timerIntervalMs / 1000.0;  // Convert ms to seconds
 
-    // Process events with look-ahead to compensate for render latency
-    // This helps ensure highlights appear at the right time on screen
-    constexpr double lookAheadMs = 25.0;  // 25ms look-ahead
-    double lookAheadTime = currentTime + (lookAheadMs / 1000.0);
+    // Process events with look-ahead from settings to compensate for render latency
+    double lookAheadTime = currentTime + (highlightSettings.lookAheadMs / 1000.0);
     eventManager.processEvents (previousTime, lookAheadTime);
 
     // Check if we've finished
