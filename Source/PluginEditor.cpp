@@ -101,24 +101,16 @@ void NarrateAudioProcessorEditor::toggleFullScreen()
 
 void NarrateAudioProcessorEditor::switchToRunningView()
 {
-    // Get the text from editor and start the running view
-    auto text = editorView.getText();
-
-    if (text.isEmpty())
-    {
-        juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::WarningIcon,
-                                                 "No Text",
-                                                 "Please enter some text before running!");
-        return;
-    }
+    // Create test project with sample lyrics
+    auto testProject = editorView.createTestProject();
 
     // Hide editor, show running view
     editorView.setVisible (false);
     runningView.setVisible (true);
     showingEditor = false;
 
-    // Start the word highlighting
-    runningView.start (text);
+    // Start playing the project
+    runningView.start (testProject);
 }
 
 void NarrateAudioProcessorEditor::switchToEditorView()
