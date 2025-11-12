@@ -3,7 +3,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "NarrateDataModel.h"
 #include "TimelineEventManager.h"
+#include "RenderStrategy.h"
 #include <functional>
+#include <memory>
 
 class RunningView : public juce::Component, private juce::Timer
 {
@@ -20,19 +22,14 @@ public:
     // Stop the playback
     void stop();
 
+    // Set the rendering strategy
+    void setRenderStrategy (std::unique_ptr<RenderStrategy> strategy);
+
     // Set a callback for when the Stop button is clicked
     std::function<void()> onStopClicked;
 
 private:
     void timerCallback() override;
-
-    // Find which clip and word should be displayed at current time
-    struct DisplayState
-    {
-        int clipIndex = -1;
-        int wordIndex = -1;
-    };
-    DisplayState getCurrentDisplayState() const;
 
     juce::TextButton stopButton;
     Narrate::NarrateProject project;
@@ -41,12 +38,16 @@ private:
     double previousTime = 0.0;  // Previous time (for event detection)
     bool isRunning = false;
     int currentClipIndex = 0;  // Index of the currently active clip
+    int currentWordIndex = -1;  // Index of the currently active word (event-based)
 
     // Timer runs at 60fps for smooth updates
     static constexpr int timerIntervalMs = 16;  // ~60fps
 
     // Time event system
     TimelineEventManager eventManager;
+
+    // Rendering strategy
+    std::unique_ptr<RenderStrategy> renderStrategy;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RunningView)
 };
