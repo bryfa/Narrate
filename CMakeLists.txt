@@ -29,6 +29,7 @@ target_sources(Narrate
         Source/EditorView.cpp
         Source/RunningView.cpp
         Source/NarrateLookAndFeel.cpp
+        Source/NarrateDataModel.cpp
 )
 
 # Set C++ standard
