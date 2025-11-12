@@ -333,6 +333,16 @@ void EditorView::updateClipFromUI()
     // Update text
     clip.setText (clipTextEditor.getText());
 
+    // Auto-space words after text update
+    double duration = clip.getDuration();
+    int numWords = clip.getNumWords();
+    if (numWords > 0)
+    {
+        double timePerWord = duration / numWords;
+        for (int i = 0; i < numWords; ++i)
+            clip.getWord (i).relativeTime = i * timePerWord;
+    }
+
     clipListBox.repaintRow (selectedClipIndex);
 }
 
