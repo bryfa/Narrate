@@ -5,12 +5,36 @@ NarrateAudioProcessor::NarrateAudioProcessor()
     : AudioProcessor (BusesProperties()
                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     )
+                     ),
+      state("NarrateState")
 {
+    // Initialize settings file (for global preferences like theme)
+    auto options = getSettingsOptions();
+    settings.reset(new juce::PropertiesFile(options));
+
+    // Initialize state with default text
+    state.setProperty("editorText", "", nullptr);
 }
 
 NarrateAudioProcessor::~NarrateAudioProcessor()
 {
+    // Save settings when app closes
+    if (settings != nullptr)
+        settings->saveIfNeeded();
+}
+
+juce::PropertiesFile::Options NarrateAudioProcessor::getSettingsOptions()
+{
+    juce::PropertiesFile::Options options;
+    options.applicationName = "Narrate";
+    options.filenameSuffix = ".settings";
+    options.osxLibrarySubFolder = "Application Support";
+    options.folderName = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                            .getChildFile("MulhacenLabs")
+                            .getChildFile("Narrate")
+                            .getFullPathName();
+    options.storageFormat = juce::PropertiesFile::storeAsXML;
+    return options;
 }
 
 const juce::String NarrateAudioProcessor::getName() const
@@ -110,14 +134,32 @@ juce::AudioProcessorEditor* NarrateAudioProcessor::createEditor()
     return new NarrateAudioProcessorEditor (*this);
 }
 
+void NarrateAudioProcessor::setEditorText(const juce::String& text)
+{
+    state.setProperty("editorText", text, nullptr);
+}
+
+juce::String NarrateAudioProcessor::getEditorText() const
+{
+    return state.getProperty("editorText").toString();
+}
+
 void NarrateAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    juce::ignoreUnused (destData);
+    // Save the state as XML to the memory block
+    auto xml = state.createXml();
+    if (xml != nullptr)
+        copyXmlToBinary(*xml, destData);
 }
 
 void NarrateAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    juce::ignoreUnused (data, sizeInBytes);
+    // Restore state from the memory block
+    auto xml = getXmlFromBinary(data, sizeInBytes);
+    if (xml != nullptr && xml->hasTagName(state.getType()))
+    {
+        state = juce::ValueTree::fromXml(*xml);
+    }
 }
 
 // This creates new instances of the plugin

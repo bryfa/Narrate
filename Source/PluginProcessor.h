@@ -8,6 +8,14 @@ public:
     NarrateAudioProcessor();
     ~NarrateAudioProcessor() override;
 
+    // Settings management (for global preferences like theme)
+    juce::PropertiesFile::Options getSettingsOptions();
+    juce::PropertiesFile* getSettings() { return settings.get(); }
+
+    // Text state management (per-instance, saved in DAW projects)
+    void setEditorText(const juce::String& text);
+    juce::String getEditorText() const;
+
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
@@ -36,5 +44,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
+    std::unique_ptr<juce::PropertiesFile> settings;
+    juce::ValueTree state;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NarrateAudioProcessor)
 };

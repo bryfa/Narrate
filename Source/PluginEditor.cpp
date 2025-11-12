@@ -2,12 +2,16 @@
 #include "PluginEditor.h"
 
 NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+    : AudioProcessorEditor (&p), processorRef (p),
+      editorView(&p)  // Pass processor to EditorView
 {
     juce::ignoreUnused (processorRef);
 
     // Apply custom LookAndFeel
     setLookAndFeel (&narrateLookAndFeel);
+
+    // Load saved theme preference
+    loadTheme();
 
     // Detect if running as standalone app
     isStandalone = juce::JUCEApplicationBase::isStandaloneApp();
@@ -131,5 +135,29 @@ void NarrateAudioProcessorEditor::switchToEditorView()
 void NarrateAudioProcessorEditor::toggleTheme()
 {
     narrateLookAndFeel.toggleTheme();
+    saveTheme();
     repaint();
+}
+
+void NarrateAudioProcessorEditor::loadTheme()
+{
+    auto* settings = processorRef.getSettings();
+    if (settings != nullptr)
+    {
+        // Default to dark theme (0), load saved preference
+        auto themeValue = settings->getIntValue("theme", 0);
+        auto theme = (themeValue == 0) ? NarrateLookAndFeel::Theme::Dark : NarrateLookAndFeel::Theme::Light;
+        narrateLookAndFeel.setTheme(theme);
+    }
+}
+
+void NarrateAudioProcessorEditor::saveTheme()
+{
+    auto* settings = processorRef.getSettings();
+    if (settings != nullptr)
+    {
+        int themeValue = (narrateLookAndFeel.getTheme() == NarrateLookAndFeel::Theme::Dark) ? 0 : 1;
+        settings->setValue("theme", themeValue);
+        settings->saveIfNeeded();
+    }
 }

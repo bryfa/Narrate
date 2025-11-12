@@ -1,6 +1,8 @@
 #include "EditorView.h"
+#include "PluginProcessor.h"
 
-EditorView::EditorView()
+EditorView::EditorView(NarrateAudioProcessor* processor)
+    : audioProcessor(processor)
 {
     // Setup text editor
     textEditor.setMultiLine (true);
@@ -8,7 +10,7 @@ EditorView::EditorView()
     textEditor.setScrollbarsShown (true);
     textEditor.setCaretVisible (true);
     textEditor.setPopupMenuEnabled (true);
-    textEditor.setText ("Enter your text here...\n\nEach word will be highlighted for one second when you click Run.");
+    textEditor.addListener(this);  // Listen for text changes
     addAndMakeVisible (textEditor);
 
     // Setup run button
@@ -19,10 +21,15 @@ EditorView::EditorView()
             onRunClicked();
     };
     addAndMakeVisible (runButton);
+
+    // Load saved text or use default
+    loadText();
 }
 
 EditorView::~EditorView()
 {
+    textEditor.removeListener(this);
+    saveText();  // Save when destroyed
 }
 
 void EditorView::paint (juce::Graphics& g)
@@ -46,4 +53,40 @@ void EditorView::resized()
 juce::String EditorView::getText() const
 {
     return textEditor.getText();
+}
+
+void EditorView::setText(const juce::String& text)
+{
+    textEditor.setText(text, false);
+}
+
+void EditorView::loadText()
+{
+    if (audioProcessor == nullptr)
+    {
+        textEditor.setText(defaultText);
+        return;
+    }
+
+    // Load text from processor state (per-instance, saved in DAW projects)
+    auto savedText = audioProcessor->getEditorText();
+    if (savedText.isEmpty())
+        textEditor.setText(defaultText);
+    else
+        textEditor.setText(savedText);
+}
+
+void EditorView::saveText()
+{
+    if (audioProcessor == nullptr)
+        return;
+
+    // Save text to processor state (will be saved in DAW projects)
+    audioProcessor->setEditorText(textEditor.getText());
+}
+
+void EditorView::textEditorTextChanged(juce::TextEditor&)
+{
+    // Auto-save text when it changes
+    saveText();
 }

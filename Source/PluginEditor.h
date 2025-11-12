@@ -21,6 +21,8 @@ private:
     void switchToRunningView();
     void switchToEditorView();
     void toggleTheme();
+    void loadTheme();
+    void saveTheme();
 
     NarrateAudioProcessor& processorRef;
 
