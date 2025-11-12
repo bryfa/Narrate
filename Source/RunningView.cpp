@@ -33,28 +33,16 @@ RunningView::DisplayState RunningView::getCurrentDisplayState() const
     // Find the active word within the clip
     double relativeTime = currentTime - clip.getStartTime();
 
-    for (int i = 0; i < clip.getNumWords(); ++i)
+    // Find the word that should be displayed at this time
+    for (int i = clip.getNumWords() - 1; i >= 0; --i)
     {
         const auto& word = clip.getWords()[i];
 
-        // Check if we're at or past this word's time
+        // If we're past this word's start time, this is the active word
         if (relativeTime >= word.relativeTime)
         {
-            // Check if we're before the next word (if there is one)
-            if (i + 1 < clip.getNumWords())
-            {
-                const auto& nextWord = clip.getWords()[i + 1];
-                if (relativeTime < nextWord.relativeTime)
-                {
-                    state.wordIndex = i;
-                    break;
-                }
-            }
-            else
-            {
-                // This is the last word
-                state.wordIndex = i;
-            }
+            state.wordIndex = i;
+            break;
         }
     }
 
@@ -102,7 +90,8 @@ void RunningView::paint (juce::Graphics& g)
         auto formatting = word.getEffectiveFormatting (clip.getDefaultFormatting());
 
         // Set font with formatting
-        juce::Font font (baseFontSize * formatting.fontSizeMultiplier);
+        auto fontHeight = baseFontSize * formatting.fontSizeMultiplier;
+        juce::Font font {juce::FontOptions {fontHeight}};
         if (formatting.bold) font.setBold (true);
         if (formatting.italic) font.setItalic (true);
         g.setFont (font);

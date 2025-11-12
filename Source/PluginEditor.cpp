@@ -30,7 +30,7 @@ NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor&
     }
 
     // Setup view switching callbacks
-    editorView.onRunClicked = [this] { switchToRunningView(); };
+    editorView.onPreviewClicked = [this] { switchToRunningView(); };
     runningView.onStopClicked = [this] { switchToEditorView(); };
 
     // Start with editor view
@@ -50,7 +50,7 @@ NarrateAudioProcessorEditor::~NarrateAudioProcessorEditor()
     setLookAndFeel (nullptr);
 }
 
-void NarrateAudioProcessorEditor::paint (juce::Graphics& g)
+void NarrateAudioProcessorEditor::paint (juce::Graphics&)
 {
     // Views handle their own painting
 }
@@ -101,8 +101,8 @@ void NarrateAudioProcessorEditor::toggleFullScreen()
 
 void NarrateAudioProcessorEditor::switchToRunningView()
 {
-    // Create test project with sample lyrics
-    auto testProject = editorView.createTestProject();
+    // Get the current project from the editor
+    auto project = editorView.getProject();
 
     // Hide editor, show running view
     editorView.setVisible (false);
@@ -110,7 +110,7 @@ void NarrateAudioProcessorEditor::switchToRunningView()
     showingEditor = false;
 
     // Start playing the project
-    runningView.start (testProject);
+    runningView.start (project);
 }
 
 void NarrateAudioProcessorEditor::switchToEditorView()
