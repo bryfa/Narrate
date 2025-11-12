@@ -108,8 +108,11 @@ void RunningView::timerCallback()
     // Advance time
     currentTime += timerIntervalMs / 1000.0;  // Convert ms to seconds
 
-    // Process any events that occurred in this time interval
-    eventManager.processEvents (previousTime, currentTime);
+    // Process events with look-ahead to compensate for render latency
+    // This helps ensure highlights appear at the right time on screen
+    constexpr double lookAheadMs = 25.0;  // 25ms look-ahead
+    double lookAheadTime = currentTime + (lookAheadMs / 1000.0);
+    eventManager.processEvents (previousTime, lookAheadTime);
 
     // Check if we've finished
     if (currentTime >= project.getTotalDuration())
