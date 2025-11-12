@@ -28,6 +28,7 @@ target_sources(Narrate
         Source/PluginEditor.cpp
         Source/EditorView.cpp
         Source/RunningView.cpp
+        Source/TimelineEventManager.cpp
         Source/NarrateLookAndFeel.cpp
         Source/NarrateDataModel.cpp
 )
