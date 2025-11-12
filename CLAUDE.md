@@ -89,6 +89,27 @@ Foundation: `juce_core`, `juce_data_structures`, `juce_events`
 
 ## Development Workflow
 
+### Testing Changes
+
+**IMPORTANT:** After applying code changes, always run the build script to verify the changes compile successfully:
+
+**Linux/WSL:**
+```bash
+./build.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\build.ps1
+```
+
+This ensures your changes don't break the build. The build scripts handle CMake configuration and compilation automatically.
+
+### Available Scripts
+
+- `build.sh` / `build.ps1` - Build only (no run)
+- `run.sh` / `run.ps1` - Build and run the standalone application
+
 ### Adding New Source Files
 
 Edit `CMakeLists.txt` and add files to `target_sources(Narrate PRIVATE ...)` section, then reconfigure CMake.
