@@ -78,9 +78,8 @@ void RunningView::start (const Narrate::NarrateProject& newProject)
 
     eventManager.onHighlightEnd = [this] (int clipIndex, int wordIndex)
     {
-        // Clear highlight when it ends
-        if (currentWordIndex == wordIndex)
-            currentWordIndex = -1;
+        // Highlight ended - just trigger repaint to update visual state
+        // Don't clear currentWordIndex - it should remain until next word starts
         repaint();
     };
 

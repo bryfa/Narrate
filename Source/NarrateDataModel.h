@@ -149,6 +149,17 @@ public:
     const juce::Colour& getHighlightColour() const { return highlightColour; }
     void setHighlightColour (const juce::Colour& colour) { highlightColour = colour; }
 
+    // Render strategy selection
+    enum class RenderStrategy
+    {
+        Scrolling = 0,
+        Karaoke = 1,
+        Teleprompter = 2
+    };
+
+    RenderStrategy getRenderStrategy() const { return renderStrategy; }
+    void setRenderStrategy (RenderStrategy strategy) { renderStrategy = strategy; }
+
     // Clip management
     void addClip (const NarrateClip& clip) { clips.add (clip); sortClips(); }
     void insertClip (int index, const NarrateClip& clip) { clips.insert (index, clip); sortClips(); }
@@ -213,6 +224,7 @@ private:
     float defaultFontSize = 24.0f;
     juce::Colour defaultTextColour = juce::Colours::white;
     juce::Colour highlightColour = juce::Colours::yellow;
+    RenderStrategy renderStrategy = RenderStrategy::Scrolling;
 
     // Keep clips sorted by start time
     void sortClips()

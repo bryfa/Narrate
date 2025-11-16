@@ -62,10 +62,12 @@ private:
     juce::TextButton autoSpaceButton {"Auto-Space Words"};
     juce::Label wordsInfoLabel {"", "Words will be evenly spaced"};
 
-    // Bottom toolbar
-    juce::TextButton newProjectButton {"New Project"};
-    juce::TextButton loadProjectButton {"Load..."};
-    juce::TextButton saveProjectButton {"Save..."};
+    // Top toolbar
+    juce::TextButton newProjectButton {"New"};
+    juce::TextButton loadProjectButton {"Load"};
+    juce::TextButton saveProjectButton {"Save"};
+    juce::Label renderStrategyLabel {"", "Render:"};
+    juce::ComboBox renderStrategyCombo;
     juce::TextButton previewButton {"Preview"};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorView)

@@ -1,5 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ScrollingRenderStrategy.h"
+#include "KaraokeRenderStrategy.h"
+#include "TeleprompterRenderStrategy.h"
 
 NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p),
@@ -41,8 +44,8 @@ NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor&
     // Enable keyboard focus so we can receive keyboard events
     setWantsKeyboardFocus (true);
 
-    // Set the initial size of the plugin window
-    setSize (800, 600);
+    // Set the initial size of the plugin window (larger for better editing experience)
+    setSize (1000, 700);
 }
 
 NarrateAudioProcessorEditor::~NarrateAudioProcessorEditor()
@@ -103,6 +106,20 @@ void NarrateAudioProcessorEditor::switchToRunningView()
 {
     // Get the current project from the editor
     auto project = editorView.getProject();
+
+    // Set the render strategy based on project settings
+    switch (project.getRenderStrategy())
+    {
+        case Narrate::NarrateProject::RenderStrategy::Scrolling:
+            runningView.setRenderStrategy (std::make_unique<ScrollingRenderStrategy>());
+            break;
+        case Narrate::NarrateProject::RenderStrategy::Karaoke:
+            runningView.setRenderStrategy (std::make_unique<KaraokeRenderStrategy>());
+            break;
+        case Narrate::NarrateProject::RenderStrategy::Teleprompter:
+            runningView.setRenderStrategy (std::make_unique<TeleprompterRenderStrategy>());
+            break;
+    }
 
     // Hide editor, show running view
     editorView.setVisible (false);

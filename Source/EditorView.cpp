@@ -51,7 +51,7 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     wordsInfoLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
     addAndMakeVisible (wordsInfoLabel);
 
-    // Setup project buttons
+    // Setup toolbar buttons
     newProjectButton.onClick = [this] { newProjectClicked(); };
     addAndMakeVisible (newProjectButton);
 
@@ -60,6 +60,22 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
 
     saveProjectButton.onClick = [this] { saveProjectClicked(); };
     addAndMakeVisible (saveProjectButton);
+
+    // Setup render strategy combo box
+    renderStrategyLabel.setJustificationType (juce::Justification::centredRight);
+    addAndMakeVisible (renderStrategyLabel);
+
+    renderStrategyCombo.addItem ("Scrolling", 1);
+    renderStrategyCombo.addItem ("Karaoke", 2);
+    renderStrategyCombo.addItem ("Teleprompter", 3);
+    renderStrategyCombo.setSelectedId (static_cast<int>(project.getRenderStrategy()) + 1, juce::dontSendNotification);
+    renderStrategyCombo.onChange = [this]
+    {
+        int selectedId = renderStrategyCombo.getSelectedId();
+        if (selectedId > 0)
+            project.setRenderStrategy (static_cast<Narrate::NarrateProject::RenderStrategy>(selectedId - 1));
+    };
+    addAndMakeVisible (renderStrategyCombo);
 
     previewButton.onClick = [this]
     {
@@ -94,16 +110,25 @@ void EditorView::resized()
 {
     auto area = getLocalBounds().reduced (10);
 
-    // Bottom toolbar
-    auto toolbar = area.removeFromBottom (40);
-    int buttonWidth = 100;
+    // Top toolbar with buttons and render strategy selector
+    auto toolbar = area.removeFromTop (40);
+    int buttonWidth = 70;
     newProjectButton.setBounds (toolbar.removeFromLeft (buttonWidth).reduced (2));
     toolbar.removeFromLeft (5);
     loadProjectButton.setBounds (toolbar.removeFromLeft (buttonWidth).reduced (2));
+    toolbar.removeFromLeft (5);
     saveProjectButton.setBounds (toolbar.removeFromLeft (buttonWidth).reduced (2));
-    previewButton.setBounds (toolbar.removeFromRight (buttonWidth).reduced (2));
+    toolbar.removeFromLeft (20);
 
-    area.removeFromBottom (10);
+    // Render strategy selector in middle
+    renderStrategyLabel.setBounds (toolbar.removeFromLeft (60).reduced (2));
+    toolbar.removeFromLeft (5);
+    renderStrategyCombo.setBounds (toolbar.removeFromLeft (120).reduced (2));
+
+    // Preview button on the right
+    previewButton.setBounds (toolbar.removeFromRight (100).reduced (2));
+
+    area.removeFromTop (10);
 
     // Left panel - Clip list
     auto leftPanel = area.removeFromLeft (area.getWidth() / 3).reduced (5);
@@ -258,6 +283,7 @@ void EditorView::newProjectClicked()
     startTimeEditor.clear();
     endTimeEditor.clear();
     clipTextEditor.clear();
+    renderStrategyCombo.setSelectedId (static_cast<int>(project.getRenderStrategy()) + 1, juce::dontSendNotification);
 }
 
 void EditorView::loadProjectClicked()
@@ -277,6 +303,7 @@ void EditorView::loadProjectClicked()
             clipListBox.updateContent();
             if (project.getNumClips() > 0)
                 clipListBox.selectRow (0);
+            renderStrategyCombo.setSelectedId (static_cast<int>(project.getRenderStrategy()) + 1, juce::dontSendNotification);
         }
         else
         {

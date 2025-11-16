@@ -30,6 +30,8 @@ target_sources(Narrate
         Source/RunningView.cpp
         Source/TimelineEventManager.cpp
         Source/ScrollingRenderStrategy.cpp
+        Source/KaraokeRenderStrategy.cpp
+        Source/TeleprompterRenderStrategy.cpp
         Source/NarrateLookAndFeel.cpp
         Source/NarrateDataModel.cpp
 )

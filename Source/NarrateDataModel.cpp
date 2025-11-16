@@ -146,6 +146,7 @@ std::unique_ptr<juce::XmlElement> NarrateProject::toXml() const
     settingsXml->setAttribute ("defaultFontSize", defaultFontSize);
     settingsXml->setAttribute ("defaultTextColour", defaultTextColour.toString());
     settingsXml->setAttribute ("highlightColour", highlightColour.toString());
+    settingsXml->setAttribute ("renderStrategy", static_cast<int>(renderStrategy));
 
     // Background audio
     if (backgroundAudioFile.existsAsFile())
@@ -177,6 +178,7 @@ NarrateProject NarrateProject::fromXml (const juce::XmlElement& xml)
         project.defaultFontSize = (float) settingsXml->getDoubleAttribute ("defaultFontSize", 24.0f);
         project.defaultTextColour = juce::Colour::fromString (settingsXml->getStringAttribute ("defaultTextColour", "FFFFFFFF"));
         project.highlightColour = juce::Colour::fromString (settingsXml->getStringAttribute ("highlightColour", "FFFFFF00"));
+        project.renderStrategy = static_cast<NarrateProject::RenderStrategy>(settingsXml->getIntAttribute ("renderStrategy", 0));
     }
 
     // Load background audio

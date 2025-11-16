@@ -105,6 +105,19 @@ Foundation: `juce_core`, `juce_data_structures`, `juce_events`
 
 This ensures your changes don't break the build. The build scripts handle CMake configuration and compilation automatically.
 
+### Code Quality Standards
+
+**Compiler and Linker Warnings:**
+
+When making code changes, all compiler and linker warnings should be resolved if possible:
+
+- **Unused variables/parameters:** Remove or mark with `juce::ignoreUnused()` or `[[maybe_unused]]`
+- **Sign comparison warnings:** Use appropriate types or explicit casts
+- **Variable shadowing:** Rename local variables to avoid shadowing members
+- **Unused parameters:** If required by interface, use `[[maybe_unused]]` attribute
+
+Warnings should not be ignored unless there's a documented reason. Clean builds with zero warnings improve code maintainability and help catch real issues.
+
 ### Available Scripts
 
 - `build.sh` / `build.ps1` - Build only (no run)
