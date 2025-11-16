@@ -25,7 +25,13 @@ fi
 
 # Build the project
 echo "Building project..."
-cmake --build . --config Release -j$(nproc)
+# Detect number of CPU cores (cross-platform)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    NCORES=$(sysctl -n hw.ncpu)
+else
+    NCORES=$(nproc)
+fi
+cmake --build . --config Release -j$NCORES
 
 # Check if build succeeded
 if [ $? -eq 0 ]; then
