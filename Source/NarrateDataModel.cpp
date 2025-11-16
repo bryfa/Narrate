@@ -203,4 +203,26 @@ NarrateProject NarrateProject::fromXml (const juce::XmlElement& xml)
     return project;
 }
 
+void NarrateProject::recalculateTimeline()
+{
+    if (clips.isEmpty())
+        return;
+
+    double currentTime = 0.0;
+
+    for (int i = 0; i < clips.size(); ++i)
+    {
+        auto& clip = clips.getReference (i);
+        double duration = clip.getEndTime() - clip.getStartTime();
+
+        clip.setStartTime (currentTime);
+        clip.setEndTime (currentTime + duration);
+
+        currentTime += duration;
+    }
+
+    // Clips should already be sorted, but ensure they remain sorted
+    sortClips();
+}
+
 } // namespace Narrate

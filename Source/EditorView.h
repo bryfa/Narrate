@@ -34,6 +34,7 @@ private:
     // UI event handlers
     void addClipClicked();
     void removeClipClicked();
+    void recalculateTimelineClicked();
     void newProjectClicked();
     void loadProjectClicked();
     void saveProjectClicked();
@@ -51,6 +52,7 @@ private:
     juce::ListBox clipListBox;
     juce::TextButton addClipButton {"Add Clip"};
     juce::TextButton removeClipButton {"Remove Clip"};
+    juce::TextButton recalculateButton {"Recalculate Timeline"};
 
     // Right panel - Clip Editor
     juce::Label startTimeLabel {"", "Start Time (s):"};

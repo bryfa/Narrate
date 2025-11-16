@@ -20,6 +20,9 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     removeClipButton.onClick = [this] { removeClipClicked(); };
     addAndMakeVisible (removeClipButton);
 
+    recalculateButton.onClick = [this] { recalculateTimelineClicked(); };
+    addAndMakeVisible (recalculateButton);
+
     // Setup clip editor labels
     startTimeLabel.setJustificationType (juce::Justification::right);
     addAndMakeVisible (startTimeLabel);
@@ -132,9 +135,21 @@ void EditorView::resized()
 
     // Left panel - Clip list
     auto leftPanel = area.removeFromLeft (area.getWidth() / 3).reduced (5);
-    auto clipButtons = leftPanel.removeFromBottom (40);
-    addClipButton.setBounds (clipButtons.removeFromLeft (clipButtons.getWidth() / 2).reduced (2));
-    removeClipButton.setBounds (clipButtons.reduced (2));
+
+    // Button area - two rows
+    auto buttonArea = leftPanel.removeFromBottom (85);  // Height for 2 rows of buttons
+
+    // First row: Add and Remove buttons
+    auto firstRow = buttonArea.removeFromTop (40);
+    addClipButton.setBounds (firstRow.removeFromLeft (firstRow.getWidth() / 2).reduced (2));
+    removeClipButton.setBounds (firstRow.reduced (2));
+
+    buttonArea.removeFromTop (5);  // Spacing between rows
+
+    // Second row: Recalculate button (full width)
+    auto secondRow = buttonArea.removeFromTop (40);
+    recalculateButton.setBounds (secondRow.reduced (2));
+
     leftPanel.removeFromBottom (5);
     clipListBox.setBounds (leftPanel);
 
@@ -272,6 +287,24 @@ void EditorView::removeClipClicked()
             clipTextEditor.clear();
         }
     }
+}
+
+void EditorView::recalculateTimelineClicked()
+{
+    if (project.getNumClips() == 0)
+        return;
+
+    // Save current clip before recalculating
+    if (selectedClipIndex >= 0 && selectedClipIndex < project.getNumClips())
+        updateClipFromUI();
+
+    // Recalculate the timeline to remove gaps
+    project.recalculateTimeline();
+
+    // Refresh UI
+    clipListBox.updateContent();
+    if (selectedClipIndex >= 0 && selectedClipIndex < project.getNumClips())
+        updateUIFromClip();
 }
 
 void EditorView::newProjectClicked()

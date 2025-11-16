@@ -166,6 +166,9 @@ public:
     void removeClip (int index) { clips.remove (index); }
     void clearClips() { clips.clear(); }
 
+    // Recalculate timeline to remove gaps between clips
+    void recalculateTimeline();
+
     NarrateClip& getClip (int index) { return clips.getReference (index); }
     const NarrateClip& getClip (int index) const { return clips.getReference (index); }
     int getNumClips() const { return clips.size(); }
