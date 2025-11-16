@@ -15,7 +15,8 @@ cd "$BUILD_DIR"
 # Configure CMake if needed (if CMakeCache.txt doesn't exist)
 if [ ! -f "CMakeCache.txt" ]; then
     echo "Configuring CMake..."
-    cmake "$SCRIPT_DIR"
+    # Use Unix Makefiles generator for cross-platform compatibility
+    cmake -G "Unix Makefiles" "$SCRIPT_DIR"
     if [ $? -ne 0 ]; then
         echo "CMake configuration failed!"
         cd "$SCRIPT_DIR"
