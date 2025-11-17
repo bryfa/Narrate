@@ -8,7 +8,8 @@
 class NarrateAudioProcessor;
 
 class EditorView : public juce::Component,
-                   private juce::ListBoxModel
+                   private juce::ListBoxModel,
+                   private juce::Timer
 {
 public:
     EditorView(NarrateAudioProcessor* processor);
@@ -73,11 +74,31 @@ private:
     juce::ComboBox renderStrategyCombo;
     juce::TextButton previewButton {"Preview"};
 
+    // Store toolbar bounds for painting background
+    juce::Rectangle<int> toolbarBounds;
+
 #if NARRATE_SHOW_LOAD_AUDIO_BUTTON
     // Standalone-only: Audio file loading
     juce::TextButton loadAudioButton {"Load Audio"};
     juce::Label audioFileLabel {"", "No audio loaded"};
     void loadAudioClicked();
+
+    // Transport controls
+    juce::TextButton playPauseButton {"Play"};
+    juce::TextButton stopButton {"Stop"};
+    juce::Slider positionSlider;
+    juce::Label positionLabel {"", "00:00 / 00:00"};
+
+    void playPauseClicked();
+    void stopClicked();
+    void positionSliderChanged();
+    void updateTransportUI();
+
+    // Timer for updating position display
+    void timerCallback();
+
+    // Store transport bar bounds for painting background
+    juce::Rectangle<int> transportBarBounds;
 #endif
 
 #if NARRATE_SHOW_EXPORT_MENU

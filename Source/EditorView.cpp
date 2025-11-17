@@ -95,6 +95,25 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     audioFileLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
     audioFileLabel.setJustificationType (juce::Justification::centredLeft);
     addAndMakeVisible (audioFileLabel);
+
+    // Transport controls
+    playPauseButton.onClick = [this] { playPauseClicked(); };
+    addAndMakeVisible (playPauseButton);
+
+    stopButton.onClick = [this] { stopClicked(); };
+    addAndMakeVisible (stopButton);
+
+    positionSlider.setRange (0.0, 1.0, 0.001);
+    positionSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    positionSlider.onValueChange = [this] { positionSliderChanged(); };
+    addAndMakeVisible (positionSlider);
+
+    positionLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
+    positionLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (positionLabel);
+
+    // Start timer for updating UI (10Hz)
+    startTimer (100);
 #endif
 
 #if NARRATE_SHOW_EXPORT_MENU
@@ -127,20 +146,87 @@ void EditorView::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::darkgrey);
 
-    // Draw separator line
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Draw transport bar background (solid, opaque)
+    if (!transportBarBounds.isEmpty())
+    {
+        g.setColour (juce::Colour (0xff2a2a2a));  // Slightly lighter than darkgrey
+        g.fillRect (transportBarBounds);
+
+        // Draw border around transport bar
+        g.setColour (juce::Colours::black);
+        g.drawRect (transportBarBounds, 1);
+    }
+#endif
+
+    // Draw toolbar background (solid, opaque)
+    if (!toolbarBounds.isEmpty())
+    {
+        g.setColour (juce::Colour (0xff2a2a2a));  // Same as transport bar
+        g.fillRect (toolbarBounds);
+
+        // Draw border around toolbar
+        g.setColour (juce::Colours::black);
+        g.drawRect (toolbarBounds, 1);
+    }
+
+    // Draw separator line (below the button bars)
     g.setColour (juce::Colours::black);
     auto bounds = getLocalBounds();
     int separatorX = bounds.getWidth() / 3;
-    g.drawLine (static_cast<float>(separatorX), 0.0f,
+
+    // Calculate where separator should start (below transport bar and toolbar)
+    float separatorStartY = 0.0f;
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    separatorStartY += transportBarBounds.getHeight();  // Skip transport bar
+#endif
+    separatorStartY += toolbarBounds.getHeight() + 5;  // Skip toolbar + spacing
+
+    g.drawLine (static_cast<float>(separatorX), separatorStartY,
                 static_cast<float>(separatorX), static_cast<float>(bounds.getHeight()), 2.0f);
 }
 
 void EditorView::resized()
 {
-    auto area = getLocalBounds().reduced (10);
+    auto area = getLocalBounds();
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only: Transport bar at the very top (fixed, always visible)
+    auto transportBarArea = area.removeFromTop (75);  // Total height for transport bar
+    transportBarBounds = transportBarArea;  // Store for painting background
+
+    // Add padding inside transport bar
+    transportBarArea.reduce (10, 5);
+
+    // Audio file label (first row)
+    auto audioLabelArea = transportBarArea.removeFromTop (20);
+    audioFileLabel.setBounds (audioLabelArea);
+    transportBarArea.removeFromTop (5);  // Spacing
+
+    // Transport controls (second row)
+    auto transportArea = transportBarArea.removeFromTop (40);
+    loadAudioButton.setBounds (transportArea.removeFromLeft (90).reduced (2));
+    transportArea.removeFromLeft (10);
+    playPauseButton.setBounds (transportArea.removeFromLeft (80).reduced (2));
+    transportArea.removeFromLeft (5);
+    stopButton.setBounds (transportArea.removeFromLeft (80).reduced (2));
+    transportArea.removeFromLeft (10);
+    positionLabel.setBounds (transportArea.removeFromLeft (100).reduced (2));
+    transportArea.removeFromLeft (10);
+    positionSlider.setBounds (transportArea.reduced (2));
+#endif
+
+    // Add spacing after transport bar
+    area.removeFromTop (5);
 
     // Top toolbar with buttons and render strategy selector
-    auto toolbar = area.removeFromTop (40);
+    auto toolbarArea = area.removeFromTop (50);  // Total height for toolbar
+    toolbarBounds = toolbarArea;  // Store for painting background
+
+    // Add padding inside toolbar
+    toolbarArea.reduce (10, 5);
+    auto toolbar = toolbarArea;
+
     int buttonWidth = 70;
     newProjectButton.setBounds (toolbar.removeFromLeft (buttonWidth).reduced (2));
     toolbar.removeFromLeft (5);
@@ -153,12 +239,7 @@ void EditorView::resized()
     renderStrategyLabel.setBounds (toolbar.removeFromLeft (60).reduced (2));
     toolbar.removeFromLeft (5);
     renderStrategyCombo.setBounds (toolbar.removeFromLeft (120).reduced (2));
-
-#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
-    // Standalone-only: Load Audio button
     toolbar.removeFromLeft (10);
-    loadAudioButton.setBounds (toolbar.removeFromLeft (90).reduced (2));
-#endif
 
 #if NARRATE_SHOW_DAW_SYNC_INDICATOR
     // Plugin-only: DAW sync indicator
@@ -177,14 +258,9 @@ void EditorView::resized()
     exportSrtButton.setBounds (toolbar.removeFromRight (90).reduced (2));
 #endif
 
-    area.removeFromTop (10);
-
-#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
-    // Standalone-only: Audio file label (second row in toolbar area)
-    auto audioLabelArea = area.removeFromTop (20);
-    audioFileLabel.setBounds (audioLabelArea.reduced (2));
+    // Add spacing after toolbar and reduce for main content area
     area.removeFromTop (5);
-#endif
+    area.reduce (10, 10);
 
     // Left panel - Clip list
     auto leftPanel = area.removeFromLeft (area.getWidth() / 3).reduced (5);
@@ -376,9 +452,9 @@ void EditorView::loadProjectClicked()
 {
     auto chooser = std::make_shared<juce::FileChooser> ("Load Narrate Project", juce::File(), "*.narrate");
 
-    auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    chooser->launchAsync (chooserFlags, [this, chooser] (const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
         if (file == juce::File())
@@ -408,9 +484,9 @@ void EditorView::saveProjectClicked()
 
     auto chooser = std::make_shared<juce::FileChooser> ("Save Narrate Project", juce::File(), "*.narrate");
 
-    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+    auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
 
-    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    chooser->launchAsync (chooserFlags, [this, chooser] (const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
         if (file == juce::File())
@@ -504,8 +580,8 @@ Narrate::NarrateProject EditorView::createTestProject()
 {
     using namespace Narrate;
 
-    NarrateProject project;
-    project.setProjectName ("Test Lyrics - Amazing Grace");
+    NarrateProject testProject;
+    testProject.setProjectName ("Test Lyrics - Amazing Grace");
 
     // Create first clip: "Amazing grace, how sweet the sound"
     NarrateClip clip1 ("clip1", 0.0, 4.0);  // 4 seconds total
@@ -528,7 +604,7 @@ Narrate::NarrateProject EditorView::createTestProject()
     word6.formatting->colour = juce::Colours::yellow;
     clip1.addWord (word6);
 
-    project.addClip (clip1);
+    testProject.addClip (clip1);
 
     // Create second clip: "That saved a wretch like me"
     NarrateClip clip2 ("clip2", 4.5, 8.0);  // Starts at 4.5s, ends at 8s
@@ -548,7 +624,7 @@ Narrate::NarrateProject EditorView::createTestProject()
     clip2.addWord (NarrateWord ("like", 2.0));
     clip2.addWord (NarrateWord ("me", 2.7));
 
-    project.addClip (clip2);
+    testProject.addClip (clip2);
 
     // Create third clip: "I once was lost, but now am found"
     NarrateClip clip3 ("clip3", 8.5, 12.5);
@@ -573,9 +649,9 @@ Narrate::NarrateProject EditorView::createTestProject()
     found.formatting->bold = true;
     clip3.addWord (found);
 
-    project.addClip (clip3);
+    testProject.addClip (clip3);
 
-    return project;
+    return testProject;
 }
 
 #if NARRATE_SHOW_LOAD_AUDIO_BUTTON
@@ -583,9 +659,9 @@ void EditorView::loadAudioClicked()
 {
     auto chooser = std::make_shared<juce::FileChooser> ("Load Audio File", juce::File(), "*.wav;*.mp3;*.aif;*.aiff;*.flac");
 
-    auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    chooser->launchAsync (chooserFlags, [this, chooser] (const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
         if (file == juce::File())
@@ -600,6 +676,9 @@ void EditorView::loadAudioClicked()
             // Update project data
             project.setBackgroundAudioFile (file);
             audioFileLabel.setText ("Audio: " + file.getFileName(), juce::dontSendNotification);
+
+            // Update transport UI to enable controls
+            updateTransportUI();
 
             juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
                                                      "Audio Loaded",
@@ -631,9 +710,9 @@ void EditorView::exportSrtClicked()
 
     auto chooser = std::make_shared<juce::FileChooser> ("Export SRT Subtitles", juce::File(), "*.srt");
 
-    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+    auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
 
-    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    chooser->launchAsync (chooserFlags, [this, chooser] (const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
         if (file == juce::File())
@@ -657,9 +736,9 @@ void EditorView::exportVttClicked()
 
     auto chooser = std::make_shared<juce::FileChooser> ("Export WebVTT Subtitles", juce::File(), "*.vtt");
 
-    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+    auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
 
-    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    chooser->launchAsync (chooserFlags, [this, chooser] (const juce::FileChooser& fc)
     {
         auto file = fc.getResult();
         if (file == juce::File())
@@ -673,5 +752,102 @@ void EditorView::exportVttClicked()
                                                  "WebVTT export will be implemented in Phase 1.\n\n"
                                                  "Would export to: " + file.getFullPathName());
     });
+}
+
+void EditorView::playPauseClicked()
+{
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    if (!audioProcessor || !audioProcessor->hasAudioLoaded())
+        return;
+
+    if (audioProcessor->isAudioPlaying())
+    {
+        audioProcessor->pauseAudioPlayback();
+        playPauseButton.setButtonText ("Play");
+    }
+    else
+    {
+        audioProcessor->startAudioPlayback();
+        playPauseButton.setButtonText ("Pause");
+    }
+#endif
+}
+
+void EditorView::stopClicked()
+{
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    if (!audioProcessor)
+        return;
+
+    audioProcessor->stopAudioPlayback();
+    audioProcessor->setAudioPosition (0.0);
+    playPauseButton.setButtonText ("Play");
+    updateTransportUI();
+#endif
+}
+
+void EditorView::positionSliderChanged()
+{
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    if (!audioProcessor || !audioProcessor->hasAudioLoaded())
+        return;
+
+    double duration = audioProcessor->getAudioDuration();
+    double newPosition = positionSlider.getValue() * duration;
+    audioProcessor->setAudioPosition (newPosition);
+#endif
+}
+
+void EditorView::updateTransportUI()
+{
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    if (!audioProcessor || !audioProcessor->hasAudioLoaded())
+    {
+        positionLabel.setText ("00:00 / 00:00", juce::dontSendNotification);
+        positionSlider.setValue (0.0, juce::dontSendNotification);
+        playPauseButton.setEnabled (false);
+        stopButton.setEnabled (false);
+        positionSlider.setEnabled (false);
+        return;
+    }
+
+    playPauseButton.setEnabled (true);
+    stopButton.setEnabled (true);
+    positionSlider.setEnabled (true);
+
+    double currentPos = audioProcessor->getAudioPosition();
+    double duration = audioProcessor->getAudioDuration();
+
+    // Update position label
+    int currentMins = static_cast<int>(currentPos) / 60;
+    int currentSecs = static_cast<int>(currentPos) % 60;
+    int durationMins = static_cast<int>(duration) / 60;
+    int durationSecs = static_cast<int>(duration) % 60;
+
+    juce::String timeText = juce::String::formatted ("%02d:%02d / %02d:%02d",
+                                                      currentMins, currentSecs,
+                                                      durationMins, durationSecs);
+    positionLabel.setText (timeText, juce::dontSendNotification);
+
+    // Update slider (avoid feedback loop)
+    if (duration > 0.0 && !positionSlider.isMouseButtonDown())
+    {
+        double normalizedPos = currentPos / duration;
+        positionSlider.setValue (normalizedPos, juce::dontSendNotification);
+    }
+
+    // Update button text
+    if (audioProcessor->isAudioPlaying())
+        playPauseButton.setButtonText ("Pause");
+    else
+        playPauseButton.setButtonText ("Play");
+#endif
+}
+
+void EditorView::timerCallback()
+{
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    updateTransportUI();
+#endif
 }
 #endif
