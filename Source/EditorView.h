@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "NarrateDataModel.h"
+#include "NarrateConfig.h"
 #include <functional>
 
 class NarrateAudioProcessor;
@@ -71,6 +72,26 @@ private:
     juce::Label renderStrategyLabel {"", "Render:"};
     juce::ComboBox renderStrategyCombo;
     juce::TextButton previewButton {"Preview"};
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only: Audio file loading
+    juce::TextButton loadAudioButton {"Load Audio"};
+    juce::Label audioFileLabel {"", "No audio loaded"};
+    void loadAudioClicked();
+#endif
+
+#if NARRATE_SHOW_EXPORT_MENU
+    // Standalone-only: Export features
+    juce::TextButton exportSrtButton {"Export SRT"};
+    juce::TextButton exportVttButton {"Export WebVTT"};
+    void exportSrtClicked();
+    void exportVttClicked();
+#endif
+
+#if NARRATE_SHOW_DAW_SYNC_INDICATOR
+    // Plugin-only: DAW sync indicator
+    juce::Label dawSyncLabel {"", "DAW Sync: Disabled"};
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorView)
 };

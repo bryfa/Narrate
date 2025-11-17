@@ -9,15 +9,16 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [System Architecture](#system-architecture)
-3. [Core Components](#core-components)
-4. [Timing System Deep Dive](#timing-system-deep-dive)
-5. [Data Model](#data-model)
-6. [Render Strategies](#render-strategies)
-7. [Current Features](#current-features)
-8. [Development Roadmap](#development-roadmap)
-9. [Design Decisions](#design-decisions)
-10. [Extension Points](#extension-points)
+2. [Build Targets & Feature Configuration](#build-targets--feature-configuration)
+3. [System Architecture](#system-architecture)
+4. [Core Components](#core-components)
+5. [Timing System Deep Dive](#timing-system-deep-dive)
+6. [Data Model](#data-model)
+7. [Render Strategies](#render-strategies)
+8. [Current Features](#current-features)
+9. [Development Roadmap](#development-roadmap)
+10. [Design Decisions](#design-decisions)
+11. [Extension Points](#extension-points)
 
 ---
 
@@ -40,6 +41,203 @@
 - **Build System**: CMake 3.15+
 - **Plugin Formats**: VST3, Standalone
 - **Data Format**: XML-based project files
+
+---
+
+## Build Targets & Feature Configuration
+
+Narrate builds as **two distinct products** with different features optimized for their use cases:
+
+### Target Audiences
+
+**1. Standalone Application**
+- **Primary Users**: Video creators, lyric video producers, content creators
+- **Use Case**: Creating synchronized lyric videos for YouTube/social media
+- **Workflow**: Load audio file → Time lyrics → Export subtitles → Import to video editor
+- **Key Need**: Audio playback and visual timing tools
+
+**2. VST3 Plugin**
+- **Primary Users**: Music producers, audio engineers, DAW users
+- **Use Case**: Display lyrics/text during music production
+- **Workflow**: Load plugin in DAW → Sync to DAW transport → Display during mixing
+- **Key Need**: DAW integration and transport synchronization
+
+### Feature Matrix
+
+| Feature | Standalone | VST3 Plugin | Rationale |
+|---------|-----------|-------------|-----------|
+| **Audio File Loading** | ✅ YES | ❌ NO | Standalone needs own audio; DAW already has audio tracks |
+| **Audio Playback** | ✅ YES | ❌ NO | Must hear audio to time lyrics; DAW handles playback |
+| **Waveform Display** | ✅ YES | ❌ NO | Visual aid for timing; use DAW's waveform instead |
+| **Transport Controls** | ✅ YES | ❌ NO | Play/pause/seek needed; DAW controls transport |
+| **Export SRT/WebVTT** | ✅ YES | ❌ NO | Export for video editors; use DAW export instead |
+| **DAW Transport Sync** | ❌ NO | ✅ YES | N/A for standalone; essential for plugin |
+| **DAW Automation** | ❌ NO | ✅ YES | N/A for standalone; professional workflow |
+| **Project Management** | ✅ YES | ✅ YES | Both need save/load |
+| **Clip/Word Editing** | ✅ YES | ✅ YES | Core functionality |
+| **Render Strategies** | ✅ YES | ✅ YES | Core functionality |
+| **Formatting** | ✅ YES | ✅ YES | Core functionality |
+
+### Configuration System
+
+**File:** `Source/NarrateConfig.h`
+
+Central configuration file that defines which features are available in each build:
+
+```cpp
+// Automatic build target detection
+#if JUCE_STANDALONE_APPLICATION
+    #define NARRATE_STANDALONE 1
+    #define NARRATE_PLUGIN 0
+#else
+    #define NARRATE_STANDALONE 0
+    #define NARRATE_PLUGIN 1
+#endif
+
+// Feature flags - Standalone
+#if NARRATE_STANDALONE
+    #define NARRATE_ENABLE_AUDIO_PLAYBACK 1
+    #define NARRATE_ENABLE_AUDIO_FILE_LOADING 1
+    #define NARRATE_ENABLE_WAVEFORM_DISPLAY 1
+    #define NARRATE_ENABLE_TRANSPORT_CONTROLS 1
+    #define NARRATE_ENABLE_SUBTITLE_EXPORT 1
+
+    #define NARRATE_SHOW_LOAD_AUDIO_BUTTON 1
+    #define NARRATE_SHOW_EXPORT_MENU 1
+
+    #define NARRATE_ENABLE_DAW_TRANSPORT_SYNC 0
+    #define NARRATE_ENABLE_DAW_AUTOMATION 0
+#endif
+
+// Feature flags - Plugin
+#if NARRATE_PLUGIN
+    #define NARRATE_ENABLE_AUDIO_PLAYBACK 0
+    #define NARRATE_ENABLE_AUDIO_FILE_LOADING 0
+    #define NARRATE_ENABLE_WAVEFORM_DISPLAY 0
+    #define NARRATE_ENABLE_TRANSPORT_CONTROLS 0
+    #define NARRATE_ENABLE_SUBTITLE_EXPORT 0
+
+    #define NARRATE_SHOW_LOAD_AUDIO_BUTTON 0
+    #define NARRATE_SHOW_EXPORT_MENU 0
+
+    #define NARRATE_ENABLE_DAW_TRANSPORT_SYNC 1
+    #define NARRATE_ENABLE_DAW_AUTOMATION 1
+    #define NARRATE_SHOW_DAW_SYNC_INDICATOR 1
+#endif
+```
+
+### Runtime Detection
+
+Helper functions to query capabilities:
+
+```cpp
+namespace NarrateConfig
+{
+    inline const char* getBuildTarget()
+    {
+        #if NARRATE_STANDALONE
+            return "Standalone";
+        #else
+            return "VST3 Plugin";
+        #endif
+    }
+
+    inline bool hasAudioPlayback() { return NARRATE_ENABLE_AUDIO_PLAYBACK; }
+    inline bool hasDawSync() { return NARRATE_ENABLE_DAW_TRANSPORT_SYNC; }
+    inline bool canExportSubtitles() { return NARRATE_ENABLE_SUBTITLE_EXPORT; }
+}
+```
+
+### UI Differences
+
+**Standalone Toolbar:**
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ [New] [Load] [Save]  Render:[▼]  [Load Audio]  [Preview]  [Export  │
+│                                                            SRT] [VTT]│
+│ Audio: my_song.wav                                                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**VST3 Plugin Toolbar:**
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ [New] [Load] [Save]  Render:[▼]  DAW Sync: Disabled    [Preview]   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Conditional Compilation Example
+
+**In `EditorView.h`:**
+```cpp
+#include "NarrateConfig.h"
+
+class EditorView : public juce::Component
+{
+    // Common components
+    juce::TextButton previewButton {"Preview"};
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only components
+    juce::TextButton loadAudioButton {"Load Audio"};
+    juce::Label audioFileLabel {"", "No audio loaded"};
+    void loadAudioClicked();
+#endif
+
+#if NARRATE_SHOW_EXPORT_MENU
+    // Standalone-only export
+    juce::TextButton exportSrtButton {"Export SRT"};
+    juce::TextButton exportVttButton {"Export WebVTT"};
+#endif
+
+#if NARRATE_SHOW_DAW_SYNC_INDICATOR
+    // Plugin-only indicator
+    juce::Label dawSyncLabel {"", "DAW Sync: Disabled"};
+#endif
+};
+```
+
+**In `EditorView.cpp`:**
+```cpp
+EditorView::EditorView(NarrateAudioProcessor* processor)
+{
+    // Common initialization
+    addAndMakeVisible(previewButton);
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only initialization
+    loadAudioButton.onClick = [this] { loadAudioClicked(); };
+    addAndMakeVisible(loadAudioButton);
+    addAndMakeVisible(audioFileLabel);
+#endif
+
+#if NARRATE_SHOW_DAW_SYNC_INDICATOR
+    // Plugin-only initialization
+    addAndMakeVisible(dawSyncLabel);
+#endif
+}
+```
+
+### Benefits
+
+1. **Optimized Binaries**: Smaller plugin (no audio engine), richer standalone app
+2. **Clear Development**: Know exactly which features belong where
+3. **User-Focused**: Each product has features for its specific use case
+4. **Maintainable**: Shared core code, separate feature sets
+5. **Testable**: Build both to verify differences work correctly
+
+### Current Implementation Status
+
+**Standalone Features:**
+- ✅ UI components added (Load Audio button, Export buttons, Audio file label)
+- ⏳ Audio playback (Phase 1 - TODO)
+- ⏳ Waveform display (Phase 1 - TODO)
+- ⏳ SRT/WebVTT export (Phase 1 - TODO)
+
+**VST3 Plugin Features:**
+- ✅ UI component added (DAW Sync indicator)
+- ⏳ DAW transport sync (Phase 2 - TODO)
+- ⏳ Automation support (Phase 2 - TODO)
 
 ---
 
@@ -1100,6 +1298,46 @@ public:
 
 ---
 
+### Why Separate Standalone and VST3 Feature Sets?
+
+**Decision:** Build two distinct products with different features using conditional compilation
+
+**Rationale:**
+- **Different User Needs**: Video creators need audio playback; DAW users already have audio
+- **Optimized Binaries**: VST3 plugin stays small without audio engine code
+- **Focused UX**: Each product has exactly the features its users need
+- **No Redundancy**: VST3 doesn't duplicate DAW functionality (transport, audio, export)
+
+**Target Markets:**
+```
+Standalone → Video Creators (YouTube lyric videos, social media)
+VST3 Plugin → Music Producers (DAW-based workflow)
+```
+
+**Implementation Approach:**
+- **Single Codebase**: Shared core functionality (timing, rendering, data model)
+- **Conditional Compilation**: `#if NARRATE_STANDALONE` / `#if NARRATE_PLUGIN`
+- **Feature Flags**: Centralized in `NarrateConfig.h`
+- **UI Adaptation**: Different toolbars and controls per build target
+
+**Benefits:**
+- ✅ Smaller plugin size (no audio engine, no file I/O for audio)
+- ✅ Richer standalone app (audio playback, waveform, export)
+- ✅ Clear development direction (know what belongs where)
+- ✅ Better user experience (no confusing unused features)
+- ✅ Easier testing (can verify both builds independently)
+
+**Trade-offs:**
+- ❌ More complex build configuration
+- ❌ Need to maintain two UI variants
+- ✅ Worth it for user-focused products
+- ✅ Shared core reduces maintenance burden
+
+**Future Consideration:**
+As features mature, may add AU (Audio Unit) format for macOS with similar conditional approach.
+
+---
+
 ## Extension Points
 
 ### Adding Custom Render Strategies
@@ -1234,6 +1472,7 @@ case EventType::SectionMarker:
 | Timing Engine | `TimelineEventManager.h` | `TimelineEventManager.cpp` |
 | Data Model | `NarrateDataModel.h` | `NarrateDataModel.cpp` |
 | Timing Config | `HighlightSettings.h` | (header-only) |
+| **Build Config** | **`NarrateConfig.h`** | **(header-only)** |
 | Render Interface | `RenderStrategy.h` | (interface) |
 | Scrolling | `ScrollingRenderStrategy.h` | `.cpp` |
 | Karaoke | `KaraokeRenderStrategy.h` | `.cpp` |

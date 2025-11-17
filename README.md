@@ -12,6 +12,8 @@ A JUCE-based audio plugin (VST3/Standalone) that displays lyrics, narration, or 
 
 ## Features
 
+> **Note:** Narrate builds as two products - **Standalone** (for video creators) and **VST3 Plugin** (for DAW users). Each has features optimized for its use case. See [Feature Matrix](#feature-availability) below.
+
 ✨ **Multiple Render Strategies**
 - **Scrolling**: Vertical scroll with centered current clip
 - **Karaoke**: Line-by-line display with dimmed context
@@ -287,13 +289,14 @@ Narrate/
 │   ├── NarrateDataModel.h/cpp   # Data structures
 │   ├── TimelineEventManager.h/cpp  # Timing engine
 │   ├── HighlightSettings.h      # Timing configuration
+│   ├── NarrateConfig.h          # Build target feature flags
 │   ├── RenderStrategy.h         # Render interface
 │   ├── ScrollingRenderStrategy.h/cpp
 │   ├── KaraokeRenderStrategy.h/cpp
 │   └── TeleprompterRenderStrategy.h/cpp
 ├── JUCE/                        # JUCE framework (submodule)
 ├── CMakeLists.txt               # CMake configuration
-├── build.sh                     # Build script
+├── build.sh                     # Build script (cross-platform)
 ├── README.md                    # This file
 ├── ARCHITECTURE.md              # System design and roadmap
 └── CLAUDE.md                    # Development guidelines
@@ -322,6 +325,29 @@ Narrate includes 5 built-in timing presets:
 - **Teleprompter**: Best for presentations and speeches
 
 Switch strategies at any time from the dropdown menu.
+
+###  Feature Availability
+
+Narrate builds as **two products** with different feature sets:
+
+| Feature | Standalone App | VST3 Plugin | Notes |
+|---------|---------------|-------------|-------|
+| Project Management | ✅ | ✅ | Save/load projects |
+| Clip/Word Editing | ✅ | ✅ | Core functionality |
+| Render Strategies | ✅ | ✅ | All three modes |
+| Timing Presets | ✅ | ✅ | Natural, Rhythmic, etc. |
+| **Audio File Loading** | ✅ | ❌ | Standalone only |
+| **Audio Playback** | ⏳ Phase 1 | ❌ | Standalone only |
+| **Waveform Display** | ⏳ Phase 1 | ❌ | Standalone only |
+| **Export SRT/WebVTT** | ⏳ Phase 1 | ❌ | Standalone only |
+| **DAW Transport Sync** | ❌ | ⏳ Phase 2 | Plugin only |
+| **DAW Automation** | ❌ | ⏳ Phase 2 | Plugin only |
+
+**Why Different Features?**
+- **Standalone**: Designed for video creators who need audio playback and subtitle export
+- **VST3 Plugin**: Designed for DAW users who already have audio and transport control
+
+For technical details, see [ARCHITECTURE.md - Build Targets](ARCHITECTURE.md#build-targets--feature-configuration).
 
 ---
 

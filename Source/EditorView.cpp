@@ -87,6 +87,32 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     };
     addAndMakeVisible (previewButton);
 
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only: Setup audio loading button
+    loadAudioButton.onClick = [this] { loadAudioClicked(); };
+    addAndMakeVisible (loadAudioButton);
+
+    audioFileLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
+    audioFileLabel.setJustificationType (juce::Justification::centredLeft);
+    addAndMakeVisible (audioFileLabel);
+#endif
+
+#if NARRATE_SHOW_EXPORT_MENU
+    // Standalone-only: Setup export buttons
+    exportSrtButton.onClick = [this] { exportSrtClicked(); };
+    addAndMakeVisible (exportSrtButton);
+
+    exportVttButton.onClick = [this] { exportVttClicked(); };
+    addAndMakeVisible (exportVttButton);
+#endif
+
+#if NARRATE_SHOW_DAW_SYNC_INDICATOR
+    // Plugin-only: Setup DAW sync indicator
+    dawSyncLabel.setColour (juce::Label::textColourId, juce::Colours::orange);
+    dawSyncLabel.setJustificationType (juce::Justification::centredRight);
+    addAndMakeVisible (dawSyncLabel);
+#endif
+
     // Select first clip
     if (project.getNumClips() > 0)
         clipListBox.selectRow (0);
@@ -128,10 +154,37 @@ void EditorView::resized()
     toolbar.removeFromLeft (5);
     renderStrategyCombo.setBounds (toolbar.removeFromLeft (120).reduced (2));
 
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only: Load Audio button
+    toolbar.removeFromLeft (10);
+    loadAudioButton.setBounds (toolbar.removeFromLeft (90).reduced (2));
+#endif
+
+#if NARRATE_SHOW_DAW_SYNC_INDICATOR
+    // Plugin-only: DAW sync indicator
+    toolbar.removeFromLeft (10);
+    dawSyncLabel.setBounds (toolbar.removeFromLeft (150).reduced (2));
+#endif
+
     // Preview button on the right
     previewButton.setBounds (toolbar.removeFromRight (100).reduced (2));
 
+#if NARRATE_SHOW_EXPORT_MENU
+    // Standalone-only: Export buttons (on the right side)
+    toolbar.removeFromRight (5);
+    exportVttButton.setBounds (toolbar.removeFromRight (90).reduced (2));
+    toolbar.removeFromRight (5);
+    exportSrtButton.setBounds (toolbar.removeFromRight (90).reduced (2));
+#endif
+
     area.removeFromTop (10);
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+    // Standalone-only: Audio file label (second row in toolbar area)
+    auto audioLabelArea = area.removeFromTop (20);
+    audioFileLabel.setBounds (audioLabelArea.reduced (2));
+    area.removeFromTop (5);
+#endif
 
     // Left panel - Clip list
     auto leftPanel = area.removeFromLeft (area.getWidth() / 3).reduced (5);
@@ -524,3 +577,83 @@ Narrate::NarrateProject EditorView::createTestProject()
 
     return project;
 }
+
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+void EditorView::loadAudioClicked()
+{
+    auto chooser = std::make_shared<juce::FileChooser> ("Load Audio File", juce::File(), "*.wav;*.mp3;*.aif;*.aiff;*.flac");
+
+    auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        // TODO: Implement audio file loading in Phase 1
+        // For now, just update the label
+        project.setBackgroundAudioFile (file);
+        audioFileLabel.setText ("Audio: " + file.getFileName(), juce::dontSendNotification);
+
+        juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
+                                                 "Audio Loaded",
+                                                 "Audio file loaded: " + file.getFileName() +
+                                                 "\n\nNote: Audio playback will be implemented in Phase 1.");
+    });
+}
+#endif
+
+#if NARRATE_SHOW_EXPORT_MENU
+void EditorView::exportSrtClicked()
+{
+    // Update current clip before exporting
+    if (selectedClipIndex >= 0 && selectedClipIndex < project.getNumClips())
+        updateClipFromUI();
+
+    auto chooser = std::make_shared<juce::FileChooser> ("Export SRT Subtitles", juce::File(), "*.srt");
+
+    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        file = file.withFileExtension (".srt");
+
+        // TODO: Implement SRT export in Phase 1
+        juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
+                                                 "Export SRT",
+                                                 "SRT export will be implemented in Phase 1.\n\n"
+                                                 "Would export to: " + file.getFullPathName());
+    });
+}
+
+void EditorView::exportVttClicked()
+{
+    // Update current clip before exporting
+    if (selectedClipIndex >= 0 && selectedClipIndex < project.getNumClips())
+        updateClipFromUI();
+
+    auto chooser = std::make_shared<juce::FileChooser> ("Export WebVTT Subtitles", juce::File(), "*.vtt");
+
+    auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync (flags, [this, chooser] (const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        file = file.withFileExtension (".vtt");
+
+        // TODO: Implement WebVTT export in Phase 1
+        juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
+                                                 "Export WebVTT",
+                                                 "WebVTT export will be implemented in Phase 1.\n\n"
+                                                 "Would export to: " + file.getFullPathName());
+    });
+}
+#endif
