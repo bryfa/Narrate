@@ -72,21 +72,32 @@ cp -r build/Narrate_artefacts/VST3/Narrate.vst3 ~/.vst3/
 ### Quick Reference
 
 **Main Components:**
-- `PluginProcessor.{h,cpp}` - Plugin entry point, audio passthrough
-- `PluginEditor.{h,cpp}` - Main window, view switching
-- `EditorView.{h,cpp}` - Edit mode interface with clip/word management
-- `RunningView.{h,cpp}` - Playback mode with timer-driven rendering
+- `PluginProcessor.{h,cpp}` - Plugin entry point, audio passthrough, audio playback (Standalone)
+- `PluginEditor.{h,cpp}` - Main window, view switching, theme management
+- `EditorView.{h,cpp}` - Edit mode interface with clip/word management, transport controls, waveform display
+- `RunningView.{h,cpp}` - Playback mode with timer-driven rendering, audio sync
+- `WaveformDisplay.{h,cpp}` - Audio waveform visualization with playback indicator
 - `NarrateDataModel.{h,cpp}` - Data structures (Project, Clip, Word)
 - `TimelineEventManager.{h,cpp}` - Core timing engine
 - `HighlightSettings.h` - Timing configuration and presets
 - `RenderStrategy.h` - Interface for visualization modes
 - `ScrollingRenderStrategy.cpp` / `KaraokeRenderStrategy.cpp` / `TeleprompterRenderStrategy.cpp` - Render implementations
+- `NarrateLookAndFeel.{h,cpp}` - Custom UI theme (Dark/Light modes)
+- `NarrateConfig.h` - Conditional compilation flags for Standalone vs VST3
 
 **Key Design Patterns:**
 - Strategy Pattern for render modes
 - Event-driven timing system
 - Relative time storage (words relative to clip start)
 - Callback-based state management
+- Conditional compilation for Standalone vs Plugin features
+
+**Audio Features (Standalone Only):**
+- Audio file loading (WAV, MP3, AIFF, FLAC)
+- Transport controls (Play/Pause, Stop, Seek)
+- Real-time waveform visualization with playback indicator
+- Audio sync with lyrics display in RunningView
+- Position display with time counter
 
 ### JUCE Modules Used
 
@@ -100,6 +111,18 @@ Foundation: `juce_core`, `juce_data_structures`, `juce_events`
 - Web browser disabled (`JUCE_WEB_BROWSER=0`)
 - CURL disabled (`JUCE_USE_CURL=0`)
 - VST2 compatibility disabled
+
+### Conditional Compilation Flags (NarrateConfig.h)
+
+The project uses conditional compilation to enable different features for Standalone vs VST3 builds:
+
+- `NARRATE_ENABLE_AUDIO_PLAYBACK` - Enables audio playback system (Standalone only)
+- `NARRATE_ENABLE_AUDIO_FILE_LOADING` - Enables audio file loading (Standalone only)
+- `NARRATE_SHOW_LOAD_AUDIO_BUTTON` - Shows Load Audio button and transport controls (Standalone only)
+- `NARRATE_SHOW_EXPORT_MENU` - Shows Export SRT/WebVTT buttons (Standalone only)
+- `NARRATE_SHOW_DAW_SYNC_INDICATOR` - Shows DAW sync status (VST3 only)
+
+These flags automatically set based on `JucePlugin_Build_Standalone` and `JucePlugin_Build_VST3` macros.
 
 ## Development Workflow
 
