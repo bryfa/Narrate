@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design, component architecture, timing system deep dive, and development roadmap
+- **[README.md](README.md)** - User-facing documentation, installation, usage, and contribution guidelines
+- **CLAUDE.md** (this file) - Build instructions, development workflow, and technical setup
+
 ## Project Overview
 
 Narrate is a JUCE 8.0.10 audio plugin built with CMake. It builds both a VST3 plugin and a standalone application.
@@ -9,6 +15,7 @@ Narrate is a JUCE 8.0.10 audio plugin built with CMake. It builds both a VST3 pl
 **Company:** MulhacenLabs
 **Plugin Codes:** Manufacturer `Mlhn`, Plugin `Nrrt`
 **Format:** VST3 Effects plugin with MIDI input support
+**Purpose:** Synchronized text display and highlighting for audio/video production
 
 ## Build System
 
@@ -60,19 +67,26 @@ cp -r build/Narrate_artefacts/VST3/Narrate.vst3 ~/.vst3/
 
 ## Architecture
 
-### Audio Processing Chain
+**For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
-The plugin uses JUCE's standard AudioProcessor architecture:
+### Quick Reference
 
-- **NarrateAudioProcessor** (`Source/PluginProcessor.{h,cpp}`) - Core audio processing
-  - Stereo I/O configuration (supports mono or stereo)
-  - MIDI input enabled
-  - Currently implements pass-through processing (add DSP in `processBlock()`)
+**Main Components:**
+- `PluginProcessor.{h,cpp}` - Plugin entry point, audio passthrough
+- `PluginEditor.{h,cpp}` - Main window, view switching
+- `EditorView.{h,cpp}` - Edit mode interface with clip/word management
+- `RunningView.{h,cpp}` - Playback mode with timer-driven rendering
+- `NarrateDataModel.{h,cpp}` - Data structures (Project, Clip, Word)
+- `TimelineEventManager.{h,cpp}` - Core timing engine
+- `HighlightSettings.h` - Timing configuration and presets
+- `RenderStrategy.h` - Interface for visualization modes
+- `ScrollingRenderStrategy.cpp` / `KaraokeRenderStrategy.cpp` / `TeleprompterRenderStrategy.cpp` - Render implementations
 
-- **NarrateAudioProcessorEditor** (`Source/PluginEditor.{h,cpp}`) - GUI
-  - Default size: 400x300
-  - Displays "Narrate Audio Plugin" text
-  - Add UI components in `resized()` and `paint()`
+**Key Design Patterns:**
+- Strategy Pattern for render modes
+- Event-driven timing system
+- Relative time storage (words relative to clip start)
+- Callback-based state management
 
 ### JUCE Modules Used
 
