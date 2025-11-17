@@ -1,6 +1,12 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "NarrateConfig.h"
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+#include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_audio_devices/juce_audio_devices.h>
+#endif
 
 class NarrateAudioProcessor : public juce::AudioProcessor
 {
@@ -43,9 +49,32 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Audio playback functionality
+    bool loadAudioFile (const juce::File& file);
+    void startAudioPlayback();
+    void stopAudioPlayback();
+    void pauseAudioPlayback();
+    bool isAudioPlaying() const;
+    double getAudioPosition() const;
+    void setAudioPosition (double positionInSeconds);
+    double getAudioDuration() const;
+    bool hasAudioLoaded() const;
+    juce::File getLoadedAudioFile() const { return loadedAudioFile; }
+#endif
+
 private:
     std::unique_ptr<juce::PropertiesFile> settings;
     juce::ValueTree state;
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Audio playback members
+    juce::AudioFormatManager formatManager;
+    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
+    juce::AudioTransportSource transportSource;
+    juce::MixerAudioSource mixerSource;
+    juce::File loadedAudioFile;
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NarrateAudioProcessor)
 };

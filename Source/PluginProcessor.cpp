@@ -14,10 +14,24 @@ NarrateAudioProcessor::NarrateAudioProcessor()
 
     // Initialize state with default text
     state.setProperty("editorText", "", nullptr);
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Initialize audio format manager
+    formatManager.registerBasicFormats();  // WAV, AIFF, MP3, etc.
+
+    // Initialize mixer and add transport source to it
+    mixerSource.addInputSource (&transportSource, false);
+#endif
 }
 
 NarrateAudioProcessor::~NarrateAudioProcessor()
 {
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Clean up audio playback
+    transportSource.setSource (nullptr);
+    mixerSource.removeAllInputs();
+#endif
+
     // Save settings when app closes
     if (settings != nullptr)
         settings->saveIfNeeded();
@@ -90,11 +104,22 @@ void NarrateAudioProcessor::changeProgramName (int index, const juce::String& ne
 
 void NarrateAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Prepare audio playback sources
+    transportSource.prepareToPlay (samplesPerBlock, sampleRate);
+    mixerSource.prepareToPlay (samplesPerBlock, sampleRate);
+#else
     juce::ignoreUnused (sampleRate, samplesPerBlock);
+#endif
 }
 
 void NarrateAudioProcessor::releaseResources()
 {
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Release audio playback resources
+    transportSource.releaseResources();
+    mixerSource.releaseResources();
+#endif
 }
 
 bool NarrateAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -118,10 +143,15 @@ void NarrateAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
+    // Clear any output channels that don't have input
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // Your audio processing code goes here
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Mix audio playback into output buffer
+    juce::AudioSourceChannelInfo channelInfo (buffer);
+    mixerSource.getNextAudioBlock (channelInfo);
+#endif
 }
 
 bool NarrateAudioProcessor::hasEditor() const
@@ -161,6 +191,79 @@ void NarrateAudioProcessor::setStateInformation (const void* data, int sizeInByt
         state = juce::ValueTree::fromXml(*xml);
     }
 }
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+// Standalone-only: Audio playback implementation
+
+bool NarrateAudioProcessor::loadAudioFile (const juce::File& file)
+{
+    // Stop any current playback
+    transportSource.stop();
+    transportSource.setSource (nullptr);
+    readerSource.reset();
+
+    // Try to create a reader for the file
+    auto* reader = formatManager.createReaderFor (file);
+    if (reader == nullptr)
+        return false;
+
+    // Create a new reader source and set it as the transport source
+    readerSource.reset (new juce::AudioFormatReaderSource (reader, true));
+    transportSource.setSource (readerSource.get(), 0, nullptr, reader->sampleRate);
+
+    // Store the loaded file
+    loadedAudioFile = file;
+
+    return true;
+}
+
+void NarrateAudioProcessor::startAudioPlayback()
+{
+    if (hasAudioLoaded())
+        transportSource.start();
+}
+
+void NarrateAudioProcessor::stopAudioPlayback()
+{
+    transportSource.stop();
+    transportSource.setPosition (0.0);
+}
+
+void NarrateAudioProcessor::pauseAudioPlayback()
+{
+    transportSource.stop();
+}
+
+bool NarrateAudioProcessor::isAudioPlaying() const
+{
+    return transportSource.isPlaying();
+}
+
+double NarrateAudioProcessor::getAudioPosition() const
+{
+    return transportSource.getCurrentPosition();
+}
+
+void NarrateAudioProcessor::setAudioPosition (double positionInSeconds)
+{
+    transportSource.setPosition (positionInSeconds);
+}
+
+double NarrateAudioProcessor::getAudioDuration() const
+{
+    if (readerSource != nullptr && readerSource->getAudioFormatReader() != nullptr)
+    {
+        auto* reader = readerSource->getAudioFormatReader();
+        return reader->lengthInSamples / reader->sampleRate;
+    }
+    return 0.0;
+}
+
+bool NarrateAudioProcessor::hasAudioLoaded() const
+{
+    return readerSource != nullptr;
+}
+#endif
 
 // This creates new instances of the plugin
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

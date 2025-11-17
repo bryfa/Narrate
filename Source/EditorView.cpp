@@ -591,15 +591,33 @@ void EditorView::loadAudioClicked()
         if (file == juce::File())
             return;
 
-        // TODO: Implement audio file loading in Phase 1
-        // For now, just update the label
+#if NARRATE_ENABLE_AUDIO_FILE_LOADING
+        // Load audio file into the processor
+        bool loadSuccess = audioProcessor->loadAudioFile (file);
+
+        if (loadSuccess)
+        {
+            // Update project data
+            project.setBackgroundAudioFile (file);
+            audioFileLabel.setText ("Audio: " + file.getFileName(), juce::dontSendNotification);
+
+            juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
+                                                     "Audio Loaded",
+                                                     "Audio file loaded successfully: " + file.getFileName() +
+                                                     "\n\nDuration: " + juce::String (audioProcessor->getAudioDuration(), 2) + " seconds");
+        }
+        else
+        {
+            juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::WarningIcon,
+                                                     "Load Failed",
+                                                     "Could not load audio file: " + file.getFileName() +
+                                                     "\n\nSupported formats: WAV, MP3, AIFF, FLAC");
+        }
+#else
+        // Should not happen, but include fallback
         project.setBackgroundAudioFile (file);
         audioFileLabel.setText ("Audio: " + file.getFileName(), juce::dontSendNotification);
-
-        juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
-                                                 "Audio Loaded",
-                                                 "Audio file loaded: " + file.getFileName() +
-                                                 "\n\nNote: Audio playback will be implemented in Phase 1.");
+#endif
     });
 }
 #endif

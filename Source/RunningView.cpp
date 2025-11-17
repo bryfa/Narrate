@@ -1,7 +1,9 @@
 #include "RunningView.h"
 #include "ScrollingRenderStrategy.h"
+#include "PluginProcessor.h"
 
-RunningView::RunningView()
+RunningView::RunningView(NarrateAudioProcessor* processor)
+    : audioProcessor(processor)
 {
     // Setup stop button
     stopButton.setButtonText ("Stop");
@@ -86,6 +88,15 @@ void RunningView::start (const Narrate::NarrateProject& newProject)
     // Build the timeline of events with current highlight settings
     eventManager.buildTimeline (project, highlightSettings);
 
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Start audio playback if loaded
+    if (audioProcessor && audioProcessor->hasAudioLoaded())
+    {
+        audioProcessor->setAudioPosition (0.0);
+        audioProcessor->startAudioPlayback();
+    }
+#endif
+
     startTimer (timerIntervalMs);  // ~60fps
     repaint();
 }
@@ -95,6 +106,15 @@ void RunningView::stop()
     isRunning = false;
     stopTimer();
     currentTime = 0.0;
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Stop audio playback
+    if (audioProcessor && audioProcessor->isAudioPlaying())
+    {
+        audioProcessor->stopAudioPlayback();
+    }
+#endif
+
     repaint();
 }
 
@@ -123,8 +143,21 @@ void RunningView::timerCallback()
     // Store previous time for event detection
     previousTime = currentTime;
 
-    // Advance time
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Standalone-only: Sync time from audio position if audio is playing
+    if (audioProcessor && audioProcessor->isAudioPlaying())
+    {
+        currentTime = audioProcessor->getAudioPosition();
+    }
+    else
+    {
+        // No audio or not playing: advance time manually
+        currentTime += timerIntervalMs / 1000.0;  // Convert ms to seconds
+    }
+#else
+    // Plugin: Always advance time manually (no audio playback)
     currentTime += timerIntervalMs / 1000.0;  // Convert ms to seconds
+#endif
 
     // Process events with look-ahead from settings to compensate for render latency
     double lookAheadTime = currentTime + (highlightSettings.lookAheadMs / 1000.0);

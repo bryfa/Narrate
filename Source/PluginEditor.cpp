@@ -6,7 +6,8 @@
 
 NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p),
-      editorView(&p)  // Pass processor to EditorView
+      editorView(&p),  // Pass processor to EditorView
+      runningView(&p)  // Pass processor to RunningView
 {
     juce::ignoreUnused (processorRef);
 

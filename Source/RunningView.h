@@ -5,13 +5,16 @@
 #include "TimelineEventManager.h"
 #include "RenderStrategy.h"
 #include "HighlightSettings.h"
+#include "NarrateConfig.h"
 #include <functional>
 #include <memory>
+
+class NarrateAudioProcessor;
 
 class RunningView : public juce::Component, private juce::Timer
 {
 public:
-    RunningView();
+    RunningView(NarrateAudioProcessor* processor);
     ~RunningView() override;
 
     void paint (juce::Graphics&) override;
@@ -37,6 +40,7 @@ public:
 private:
     void timerCallback() override;
 
+    NarrateAudioProcessor* audioProcessor;
     juce::TextButton stopButton;
     Narrate::NarrateProject project;
 
