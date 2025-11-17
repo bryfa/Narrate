@@ -112,6 +112,9 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     positionLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (positionLabel);
 
+    // Waveform display
+    addAndMakeVisible (waveformDisplay);
+
     // Start timer for updating UI (10Hz)
     startTimer (100);
 #endif
@@ -214,9 +217,14 @@ void EditorView::resized()
     positionLabel.setBounds (transportArea.removeFromLeft (100).reduced (2));
     transportArea.removeFromLeft (10);
     positionSlider.setBounds (transportArea.reduced (2));
+
+    // Waveform display (below transport controls)
+    area.removeFromTop (5);  // Spacing
+    auto waveformArea = area.removeFromTop (80);  // 80px height for waveform
+    waveformDisplay.setBounds (waveformArea.reduced (10, 0));
 #endif
 
-    // Add spacing after transport bar
+    // Add spacing after waveform
     area.removeFromTop (5);
 
     // Top toolbar with buttons and render strategy selector
@@ -677,6 +685,9 @@ void EditorView::loadAudioClicked()
             project.setBackgroundAudioFile (file);
             audioFileLabel.setText ("Audio: " + file.getFileName(), juce::dontSendNotification);
 
+            // Load waveform
+            waveformDisplay.loadURL (file);
+
             // Update transport UI to enable controls
             updateTransportUI();
 
@@ -834,6 +845,12 @@ void EditorView::updateTransportUI()
     {
         double normalizedPos = currentPos / duration;
         positionSlider.setValue (normalizedPos, juce::dontSendNotification);
+    }
+
+    // Update waveform position
+    if (duration > 0.0)
+    {
+        waveformDisplay.setRelativePosition (currentPos / duration);
     }
 
     // Update button text

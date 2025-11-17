@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "NarrateDataModel.h"
 #include "NarrateConfig.h"
+#include "WaveformDisplay.h"
 #include <functional>
 
 class NarrateAudioProcessor;
@@ -96,6 +97,9 @@ private:
 
     // Timer for updating position display
     void timerCallback();
+
+    // Waveform display
+    WaveformDisplay waveformDisplay;
 
     // Store transport bar bounds for painting background
     juce::Rectangle<int> transportBarBounds;

@@ -34,6 +34,7 @@ target_sources(Narrate
         Source/TeleprompterRenderStrategy.cpp
         Source/NarrateLookAndFeel.cpp
         Source/NarrateDataModel.cpp
+        Source/WaveformDisplay.cpp
 )
 
 # Set C++ standard
