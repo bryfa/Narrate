@@ -35,6 +35,14 @@ target_sources(Narrate
         Source/NarrateLookAndFeel.cpp
         Source/NarrateDataModel.cpp
         Source/WaveformDisplay.cpp
+
+        # Feature implementations
+        Source/Features/StandaloneAudioPlayback.cpp
+
+        # UI Panels
+        Source/UI/AudioPlaybackPanel.cpp
+        Source/UI/ExportPanel.cpp
+        Source/UI/DawSyncPanel.cpp
 )
 
 # Set C++ standard
