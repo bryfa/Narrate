@@ -1,7 +1,7 @@
 # Narrate - Architecture & Design Document
 
-**Version:** 1.0
-**Last Updated:** 2025-11-17
+**Version:** 1.1
+**Last Updated:** 2025-11-19
 **Status:** Living Document
 
 ---
@@ -304,6 +304,100 @@ RenderStrategy.render() draws text with highlighting
     ↓
 Display updated on screen
 ```
+
+### Feature Components Architecture
+
+**New in v1.1** - Narrate uses a **Feature Components pattern** to cleanly separate build-target-specific functionality without scattering `#if` directives throughout the codebase.
+
+#### Design Pattern
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              PluginProcessor                             │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  std::unique_ptr<AudioPlaybackFeature>           │   │
+│  │  std::unique_ptr<ExportFeature>                  │   │
+│  │  std::unique_ptr<DawSyncFeature>                 │   │
+│  └──────────────────────────────────────────────────┘   │
+└────────────────┬────────────────────────────────────────┘
+                 │
+        ┌────────▼─────────┐
+        │  FeatureFactory  │  ← Only place with #if directives
+        └────────┬─────────┘
+                 │
+    ┌────────────┼────────────┐
+    │            │            │
+┌───▼────┐  ┌───▼─────┐  ┌──▼──────┐
+│Standalone│ │ No-Op   │ │ Plugin  │
+│Audio     │ │Export   │ │DawSync  │
+│Playback  │ │Feature  │ │Feature  │
+└──────────┘ └─────────┘ └─────────┘
+```
+
+#### Layer Structure
+
+**1. Feature Interfaces** (`Source/Features/*Feature.h`)
+- Pure virtual base classes
+- Define common API for all implementations
+- Examples: `AudioPlaybackFeature`, `ExportFeature`, `DawSyncFeature`
+
+**2. Full Implementations** (`Source/Features/Standalone*.cpp`, `Plugin*.cpp`)
+- Complete functionality for specific build targets
+- Examples:
+  - `StandaloneAudioPlayback` - Full audio player (Standalone only)
+  - `StandaloneExportFeature` - SRT/WebVTT export (Standalone only)
+  - `PluginDawSyncFeature` - DAW transport sync (Plugin only)
+
+**3. No-Op Implementations** (`Source/Features/NoOp*.h`)
+- Empty stubs for disabled features
+- Null Object pattern - no null checks needed
+- Zero runtime overhead
+- Examples:
+  - `NoOpAudioPlayback` - Used in Plugin builds
+  - `NoOpExportFeature` - Used in Plugin builds
+  - `NoOpDawSyncFeature` - Used in Standalone builds
+
+**4. Feature Factory** (`Source/Features/FeatureFactory.h`)
+- **The ONLY file with `#if` directives for features**
+- Creates appropriate implementation based on build target
+- Clean, centralized feature selection
+
+**5. UI Panels** (`Source/UI/*Panel.cpp`)
+- Self-contained UI for each feature
+- Shows/hides based on feature availability
+- Examples:
+  - `AudioPlaybackPanel` - Transport controls, waveform (Standalone only)
+  - `ExportPanel` - Export buttons (Standalone only)
+  - `DawSyncPanel` - Sync indicator (Plugin only)
+
+#### Example Usage
+
+```cpp
+// In PluginProcessor constructor - NO #if needed!
+audioPlayback = FeatureFactory::createAudioPlayback();
+// Standalone: Gets StandaloneAudioPlayback
+// Plugin: Gets NoOpAudioPlayback
+
+// Later in code - runtime check, no #if
+if (audioPlayback->isAvailable())
+{
+    audioPlayback->startPlayback();  // Works or does nothing
+}
+
+// UI visibility - automatic
+audioPlaybackPanel.setVisible(audioPlayback->isAvailable());
+// Standalone: Shows transport controls
+// Plugin: Hidden
+```
+
+#### Benefits
+
+✅ **Clean Code** - No scattered `#if` directives in main application code
+✅ **Type Safety** - Compile-time interface checking
+✅ **Testability** - Easy to create mock implementations
+✅ **Maintainability** - Each feature's code in one place
+✅ **Null Safety** - No null pointer checks needed
+✅ **Zero Runtime Cost** - No-op implementations inline to nothing
 
 ---
 
