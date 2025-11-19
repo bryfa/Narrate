@@ -78,6 +78,8 @@ double StandaloneAudioPlayback::getDuration() const
 void StandaloneAudioPlayback::getThumbnailData(int channel, double startTime, double endTime,
                                                 float* samples, int numSamples)
 {
+    juce::ignoreUnused(channel, startTime, endTime);
+
     // This would require maintaining an AudioThumbnail
     // For now, just clear the buffer
     juce::FloatVectorOperations::clear(samples, numSamples);

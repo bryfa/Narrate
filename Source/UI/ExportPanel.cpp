@@ -40,21 +40,25 @@ void ExportPanel::resized()
 
 void ExportPanel::exportSrtClicked()
 {
-    // TODO: Implement SRT export
+    // TODO: Get project from processor/editor
     juce::AlertWindow::showMessageBoxAsync(
         juce::MessageBoxIconType::InfoIcon,
         "Export SRT",
-        "SRT export functionality will be implemented in Phase 1.",
+        "Export functionality is ready!\n\n"
+        "This will be wired up when EditorView is refactored.\n"
+        "Implementation: StandaloneExportFeature::exportSRT()",
         "OK");
 }
 
 void ExportPanel::exportVttClicked()
 {
-    // TODO: Implement WebVTT export
+    // TODO: Get project from processor/editor
     juce::AlertWindow::showMessageBoxAsync(
         juce::MessageBoxIconType::InfoIcon,
         "Export WebVTT",
-        "WebVTT export functionality will be implemented in Phase 1.",
+        "Export functionality is ready!\n\n"
+        "This will be wired up when EditorView is refactored.\n"
+        "Implementation: StandaloneExportFeature::exportWebVTT()",
         "OK");
 }
 

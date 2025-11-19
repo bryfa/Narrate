@@ -41,12 +41,12 @@ void KaraokeRenderStrategy::render (juce::Graphics& g, const RenderContext& cont
 
     // Find which line contains the current word
     int currentLineIndex = -1;
-    for (int i = 0; i < lines.size(); ++i)
+    for (size_t i = 0; i < lines.size(); ++i)
     {
         if (context.wordIndex >= lines[i].startWordIndex &&
             context.wordIndex <= lines[i].endWordIndex)
         {
-            currentLineIndex = i;
+            currentLineIndex = static_cast<int>(i);
             break;
         }
     }
@@ -62,21 +62,21 @@ void KaraokeRenderStrategy::render (juce::Graphics& g, const RenderContext& cont
     if (showPreviousLine && currentLineIndex > 0)
     {
         float prevY = centerY - lineHeight * 1.5f;
-        renderLine (g, context, clip, lines[currentLineIndex - 1],
+        renderLine (g, context, clip, lines[static_cast<size_t>(currentLineIndex - 1)],
                     context.currentClipIndex, prevY, baseFontSize, lineHeight,
                     true, false);
     }
 
     // Render current line (highlighted)
-    renderLine (g, context, clip, lines[currentLineIndex],
+    renderLine (g, context, clip, lines[static_cast<size_t>(currentLineIndex)],
                 context.currentClipIndex, centerY, baseFontSize, lineHeight,
                 false, false);
 
     // Render next line (preview)
-    if (showNextLine && currentLineIndex < lines.size() - 1)
+    if (showNextLine && currentLineIndex < static_cast<int>(lines.size()) - 1)
     {
         float nextY = centerY + lineHeight * 1.5f;
-        renderLine (g, context, clip, lines[currentLineIndex + 1],
+        renderLine (g, context, clip, lines[static_cast<size_t>(currentLineIndex + 1)],
                     context.currentClipIndex, nextY, baseFontSize, lineHeight,
                     false, true);
     }
@@ -152,6 +152,7 @@ void KaraokeRenderStrategy::renderLine (juce::Graphics& g, const RenderContext& 
                                          int clipIndex, float y, float baseFontSize, float lineHeight,
                                          bool isDimmed, bool isPreview)
 {
+    juce::ignoreUnused(clipIndex);
     const auto& words = clip.getWords();
     float areaWidth = static_cast<float>(context.bounds.getWidth());
     float x = calculateLineStartX (areaWidth, line.totalWidth);

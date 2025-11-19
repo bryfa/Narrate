@@ -38,6 +38,8 @@ target_sources(Narrate
 
         # Feature implementations
         Source/Features/StandaloneAudioPlayback.cpp
+        Source/Features/StandaloneExportFeature.cpp
+        Source/Features/PluginDawSyncFeature.cpp
 
         # UI Panels
         Source/UI/AudioPlaybackPanel.cpp

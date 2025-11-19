@@ -1,13 +1,18 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "NarrateConfig.h"
+#include "Features/FeatureFactory.h"
+#include "Features/AudioPlaybackFeature.h"
+#include "Features/ExportFeature.h"
+#include "Features/DawSyncFeature.h"
+#include <memory>
 
-#if NARRATE_ENABLE_AUDIO_PLAYBACK
-#include <juce_audio_formats/juce_audio_formats.h>
-#include <juce_audio_devices/juce_audio_devices.h>
-#endif
-
+/**
+ * NarrateAudioProcessor
+ *
+ * Refactored to use feature components instead of conditional compilation.
+ * Audio playback, export, and DAW sync are now handled by polymorphic feature objects.
+ */
 class NarrateAudioProcessor : public juce::AudioProcessor
 {
 public:
@@ -22,59 +27,59 @@ public:
     void setEditorText(const juce::String& text);
     juce::String getEditorText() const;
 
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    // Audio processing
+    void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
-
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     using AudioProcessor::processBlock;
 
+    // Editor
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
+    // Plugin info
     const juce::String getName() const override;
-
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
 
+    // Programs
     int getNumPrograms() override;
     int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
 
-    void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+    // State saving
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
 
-#if NARRATE_ENABLE_AUDIO_PLAYBACK
-    // Standalone-only: Audio playback functionality
-    bool loadAudioFile (const juce::File& file);
-    void startAudioPlayback();
-    void stopAudioPlayback();
-    void pauseAudioPlayback();
-    bool isAudioPlaying() const;
-    double getAudioPosition() const;
-    void setAudioPosition (double positionInSeconds);
-    double getAudioDuration() const;
-    bool hasAudioLoaded() const;
-    juce::File getLoadedAudioFile() const { return loadedAudioFile; }
-#endif
+    // Feature access (no conditional compilation needed!)
+    AudioPlaybackFeature& getAudioPlayback() { return *audioPlayback; }
+    ExportFeature& getExportFeature() { return *exportFeature; }
+    DawSyncFeature& getDawSync() { return *dawSync; }
+
+    // Convenience methods (delegate to features)
+    bool loadAudioFile(const juce::File& file) { return audioPlayback->loadAudioFile(file); }
+    void startAudioPlayback() { audioPlayback->startPlayback(); }
+    void stopAudioPlayback() { audioPlayback->stopPlayback(); }
+    void pauseAudioPlayback() { audioPlayback->pausePlayback(); }
+    bool isAudioPlaying() const { return audioPlayback->isPlaying(); }
+    double getAudioPosition() const { return audioPlayback->getPosition(); }
+    void setAudioPosition(double pos) { audioPlayback->setPosition(pos); }
+    double getAudioDuration() const { return audioPlayback->getDuration(); }
+    bool hasAudioLoaded() const { return audioPlayback->hasAudioLoaded(); }
 
 private:
     std::unique_ptr<juce::PropertiesFile> settings;
     juce::ValueTree state;
 
-#if NARRATE_ENABLE_AUDIO_PLAYBACK
-    // Standalone-only: Audio playback members
-    juce::AudioFormatManager formatManager;
-    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
-    juce::AudioTransportSource transportSource;
-    juce::MixerAudioSource mixerSource;
-    juce::File loadedAudioFile;
-#endif
+    // Feature components (created by FeatureFactory based on build target)
+    std::unique_ptr<AudioPlaybackFeature> audioPlayback;
+    std::unique_ptr<ExportFeature> exportFeature;
+    std::unique_ptr<DawSyncFeature> dawSync;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NarrateAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NarrateAudioProcessor)
 };

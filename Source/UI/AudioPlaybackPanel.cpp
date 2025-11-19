@@ -95,22 +95,27 @@ void AudioPlaybackPanel::resized()
 
 void AudioPlaybackPanel::loadAudioClicked()
 {
-    juce::FileChooser chooser("Select an audio file...",
-                              juce::File(),
-                              "*.wav;*.mp3;*.aif;*.aiff;*.flac");
+    auto chooser = std::make_shared<juce::FileChooser>("Select an audio file...",
+                                                         juce::File(),
+                                                         "*.wav;*.mp3;*.aif;*.aiff;*.flac");
 
-    if (chooser.browseForFileToOpen())
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
     {
-        auto file = chooser.getResult();
+        auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
         if (audioProcessor->loadAudioFile(file))
         {
             audioFileLabel.setText(file.getFileName(), juce::dontSendNotification);
-            waveformDisplay.setAudioFile(file);
+            waveformDisplay.loadURL(file);
             waveformDisplay.setVisible(true);
             updateUI();
             resized();
         }
-    }
+    });
 }
 
 void AudioPlaybackPanel::playPauseClicked()
@@ -167,7 +172,10 @@ void AudioPlaybackPanel::updateUI()
     positionLabel.setText(timeText, juce::dontSendNotification);
 
     // Update waveform playback position
-    waveformDisplay.setPlaybackPosition(position);
+    if (duration > 0.0)
+    {
+        waveformDisplay.setRelativePosition(position / duration);
+    }
 }
 
 void AudioPlaybackPanel::timerCallback()

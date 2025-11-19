@@ -167,7 +167,7 @@ float TeleprompterRenderStrategy::calculateScrollOffset (const std::vector<LineI
                                                           float readLineY) const
 {
     // Find the line containing the current word from the current clip
-    for (int lineIndex = 0; lineIndex < allLines.size(); ++lineIndex)
+    for (size_t lineIndex = 0; lineIndex < allLines.size(); ++lineIndex)
     {
         const auto& line = allLines[lineIndex];
 

@@ -79,6 +79,7 @@ public:
     void removeWord (int index) { words.remove (index); }
     void clearWords() { words.clear(); }
     NarrateWord& getWord (int index) { return words.getReference (index); }
+    const NarrateWord& getWord (int index) const { return words.getReference (index); }
     int getNumWords() const { return words.size(); }
 
     // Get full text of all words

@@ -11,8 +11,16 @@
     #include "NoOpAudioPlayback.h"
 #endif
 
-#include "NoOpExportFeature.h"  // TODO: Add StandaloneExportFeature when implemented
-#include "NoOpDawSyncFeature.h"  // TODO: Add PluginDawSyncFeature when implemented
+#if NARRATE_ENABLE_SUBTITLE_EXPORT
+    #include "StandaloneExportFeature.h"
+#else
+    #include "NoOpExportFeature.h"
+#endif
+#if NARRATE_ENABLE_DAW_TRANSPORT_SYNC
+    #include "PluginDawSyncFeature.h"
+#else
+    #include "NoOpDawSyncFeature.h"
+#endif
 
 #include <memory>
 
@@ -47,8 +55,7 @@ public:
     static std::unique_ptr<ExportFeature> createExportFeature()
     {
 #if NARRATE_ENABLE_SUBTITLE_EXPORT
-        // TODO: Implement StandaloneExportFeature
-        return std::make_unique<NoOpExportFeature>();
+        return std::make_unique<StandaloneExportFeature>();
 #else
         return std::make_unique<NoOpExportFeature>();
 #endif
@@ -62,8 +69,7 @@ public:
     static std::unique_ptr<DawSyncFeature> createDawSyncFeature()
     {
 #if NARRATE_ENABLE_DAW_TRANSPORT_SYNC
-        // TODO: Implement PluginDawSyncFeature
-        return std::make_unique<NoOpDawSyncFeature>();
+        return std::make_unique<PluginDawSyncFeature>();
 #else
         return std::make_unique<NoOpDawSyncFeature>();
 #endif

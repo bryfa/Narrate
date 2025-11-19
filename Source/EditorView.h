@@ -2,21 +2,27 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "NarrateDataModel.h"
-#include "NarrateConfig.h"
-#include "WaveformDisplay.h"
+#include "UI/AudioPlaybackPanel.h"
+#include "UI/ExportPanel.h"
+#include "UI/DawSyncPanel.h"
 #include <functional>
 
 class NarrateAudioProcessor;
 
+/**
+ * EditorView
+ *
+ * Refactored to use UI panels instead of conditional compilation.
+ * Feature-specific UI is now handled by dedicated panel components.
+ */
 class EditorView : public juce::Component,
-                   private juce::ListBoxModel,
-                   private juce::Timer
+                   private juce::ListBoxModel
 {
 public:
     EditorView(NarrateAudioProcessor* processor);
     ~EditorView() override;
 
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
 
     // Get the current project
@@ -31,8 +37,8 @@ public:
 private:
     // ListBoxModel overrides
     int getNumRows() override;
-    void paintListBoxItem (int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
-    void selectedRowsChanged (int lastRowSelected) override;
+    void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
+    void selectedRowsChanged(int lastRowSelected) override;
 
     // UI event handlers
     void addClipClicked();
@@ -78,45 +84,11 @@ private:
     // Store toolbar bounds for painting background
     juce::Rectangle<int> toolbarBounds;
 
-#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
-    // Standalone-only: Audio file loading
-    juce::TextButton loadAudioButton {"Load Audio"};
-    juce::Label audioFileLabel {"", "No audio loaded"};
-    void loadAudioClicked();
+    // Feature panels (NO conditional compilation!)
+    // These are always present; visibility managed by panels themselves
+    AudioPlaybackPanel audioPlaybackPanel;
+    ExportPanel exportPanel;
+    DawSyncPanel dawSyncPanel;
 
-    // Transport controls
-    juce::TextButton playPauseButton {"Play"};
-    juce::TextButton stopButton {"Stop"};
-    juce::Slider positionSlider;
-    juce::Label positionLabel {"", "00:00 / 00:00"};
-
-    void playPauseClicked();
-    void stopClicked();
-    void positionSliderChanged();
-    void updateTransportUI();
-
-    // Timer for updating position display
-    void timerCallback();
-
-    // Waveform display
-    WaveformDisplay waveformDisplay;
-
-    // Store transport bar bounds for painting background
-    juce::Rectangle<int> transportBarBounds;
-#endif
-
-#if NARRATE_SHOW_EXPORT_MENU
-    // Standalone-only: Export features
-    juce::TextButton exportSrtButton {"Export SRT"};
-    juce::TextButton exportVttButton {"Export WebVTT"};
-    void exportSrtClicked();
-    void exportVttClicked();
-#endif
-
-#if NARRATE_SHOW_DAW_SYNC_INDICATOR
-    // Plugin-only: DAW sync indicator
-    juce::Label dawSyncLabel {"", "DAW Sync: Disabled"};
-#endif
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorView)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EditorView)
 };
