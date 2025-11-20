@@ -14,6 +14,10 @@
 #if JUCE_STANDALONE_APPLICATION || JucePlugin_Build_Standalone
     #define NARRATE_STANDALONE 1
     #define NARRATE_PLUGIN 0
+#elif defined(NARRATE_ENABLE_SUBTITLE_EXPORT)
+    // Console build - explicitly enables export via CMake preprocessor
+    #define NARRATE_STANDALONE 1
+    #define NARRATE_PLUGIN 0
 #else
     #define NARRATE_STANDALONE 0
     #define NARRATE_PLUGIN 1
