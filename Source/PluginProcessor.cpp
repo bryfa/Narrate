@@ -9,6 +9,7 @@ NarrateAudioProcessor::NarrateAudioProcessor()
       state("NarrateState"),
       audioPlayback(FeatureFactory::createAudioPlayback()),
       exportFeature(FeatureFactory::createExportFeature()),
+      importFeature(FeatureFactory::createImportFeature()),
       dawSync(FeatureFactory::createDawSyncFeature())
 {
     // Initialize settings file (for global preferences like theme)

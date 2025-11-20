@@ -4,6 +4,7 @@
 #include "Features/FeatureFactory.h"
 #include "Features/AudioPlaybackFeature.h"
 #include "Features/ExportFeature.h"
+#include "Features/ImportFeature.h"
 #include "Features/DawSyncFeature.h"
 #include <memory>
 
@@ -59,6 +60,7 @@ public:
     // Feature access (no conditional compilation needed!)
     AudioPlaybackFeature& getAudioPlayback() { return *audioPlayback; }
     ExportFeature& getExportFeature() { return *exportFeature; }
+    ImportFeature& getImportFeature() { return *importFeature; }
     DawSyncFeature& getDawSync() { return *dawSync; }
 
     // Convenience methods (delegate to features)
@@ -79,6 +81,7 @@ private:
     // Feature components (created by FeatureFactory based on build target)
     std::unique_ptr<AudioPlaybackFeature> audioPlayback;
     std::unique_ptr<ExportFeature> exportFeature;
+    std::unique_ptr<ImportFeature> importFeature;
     std::unique_ptr<DawSyncFeature> dawSync;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NarrateAudioProcessor)

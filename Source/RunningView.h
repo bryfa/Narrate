@@ -39,9 +39,17 @@ public:
 
 private:
     void timerCallback() override;
+    void previousClipClicked();
+    void nextClipClicked();
+    void jumpBackClicked();
+    void jumpForwardClicked();
 
     NarrateAudioProcessor* audioProcessor;
     juce::TextButton stopButton;
+    juce::TextButton previousClipButton {"<<"};
+    juce::TextButton nextClipButton {">>"};
+    juce::TextButton jumpBackButton {"|<"};
+    juce::TextButton jumpForwardButton {">|"};
     Narrate::NarrateProject project;
 
     double currentTime = 0.0;  // Current playback time in seconds

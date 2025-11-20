@@ -15,6 +15,19 @@ RunningView::RunningView(NarrateAudioProcessor* processor)
     };
     addAndMakeVisible (stopButton);
 
+    // Setup navigation buttons
+    previousClipButton.onClick = [this] { previousClipClicked(); };
+    addAndMakeVisible (previousClipButton);
+
+    nextClipButton.onClick = [this] { nextClipClicked(); };
+    addAndMakeVisible (nextClipButton);
+
+    jumpBackButton.onClick = [this] { jumpBackClicked(); };
+    addAndMakeVisible (jumpBackButton);
+
+    jumpForwardButton.onClick = [this] { jumpForwardClicked(); };
+    addAndMakeVisible (jumpForwardButton);
+
     // Initialize with default scrolling strategy
     renderStrategy = std::make_unique<ScrollingRenderStrategy>();
 }
@@ -53,7 +66,23 @@ void RunningView::paint (juce::Graphics& g)
 void RunningView::resized()
 {
     auto area = getLocalBounds().reduced (10);
-    stopButton.setBounds (area.removeFromBottom (40));
+
+    // Bottom control bar - two rows
+    auto controlBar = area.removeFromBottom (90);
+
+    // Top row: Navigation buttons (4 buttons)
+    auto navRow = controlBar.removeFromTop (40);
+    int buttonWidth = navRow.getWidth() / 4;
+
+    previousClipButton.setBounds (navRow.removeFromLeft (buttonWidth).reduced (2));
+    jumpBackButton.setBounds (navRow.removeFromLeft (buttonWidth).reduced (2));
+    jumpForwardButton.setBounds (navRow.removeFromLeft (buttonWidth).reduced (2));
+    nextClipButton.setBounds (navRow.removeFromLeft (buttonWidth).reduced (2));
+
+    controlBar.removeFromTop (5);  // Spacing
+
+    // Bottom row: Stop button (full width)
+    stopButton.setBounds (controlBar.removeFromTop (40));
 }
 
 void RunningView::start (const Narrate::NarrateProject& newProject)
@@ -170,6 +199,141 @@ void RunningView::timerCallback()
         if (onStopClicked)
             onStopClicked();
         return;
+    }
+
+    repaint();
+}
+
+void RunningView::previousClipClicked()
+{
+    if (!isRunning || currentClipIndex <= 0)
+        return;
+
+    // Jump to the previous clip
+    currentClipIndex--;
+
+    // Set time to the start of the previous clip
+    if (currentClipIndex >= 0 && currentClipIndex < project.getNumClips())
+    {
+        auto& clip = project.getClip(currentClipIndex);
+        currentTime = clip.getStartTime();
+        currentWordIndex = -1;  // Reset word index
+
+        // Update previousTime to enable proper event processing
+        // Set it slightly before currentTime so processEvents will fire
+        previousTime = juce::jmax(0.0, currentTime - 0.001);
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+        // Update audio position if audio is loaded
+        if (audioProcessor && audioProcessor->hasAudioLoaded())
+        {
+            audioProcessor->setAudioPosition(currentTime);
+        }
+#endif
+
+        repaint();
+    }
+}
+
+void RunningView::nextClipClicked()
+{
+    if (!isRunning || currentClipIndex >= project.getNumClips() - 1)
+        return;
+
+    // Jump to the next clip
+    currentClipIndex++;
+
+    // Set time to the start of the next clip
+    if (currentClipIndex >= 0 && currentClipIndex < project.getNumClips())
+    {
+        auto& clip = project.getClip(currentClipIndex);
+        currentTime = clip.getStartTime();
+        currentWordIndex = -1;  // Reset word index
+
+        // Update previousTime to enable proper event processing
+        // Set it slightly before currentTime so processEvents will fire
+        previousTime = juce::jmax(0.0, currentTime - 0.001);
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+        // Update audio position if audio is loaded
+        if (audioProcessor && audioProcessor->hasAudioLoaded())
+        {
+            audioProcessor->setAudioPosition(currentTime);
+        }
+#endif
+
+        repaint();
+    }
+}
+
+void RunningView::jumpBackClicked()
+{
+    if (!isRunning)
+        return;
+
+    // Jump back 5 seconds
+    constexpr double jumpAmount = 5.0;
+    currentTime = juce::jmax(0.0, currentTime - jumpAmount);
+
+    // Update previousTime to enable proper event processing
+    // Set it slightly before currentTime so processEvents will fire
+    previousTime = juce::jmax(0.0, currentTime - 0.001);
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Update audio position if audio is loaded
+    if (audioProcessor && audioProcessor->hasAudioLoaded())
+    {
+        audioProcessor->setAudioPosition(currentTime);
+    }
+#endif
+
+    // Update clip index based on new time
+    for (int i = 0; i < project.getNumClips(); ++i)
+    {
+        auto& clip = project.getClip(i);
+        if (currentTime >= clip.getStartTime() && currentTime < clip.getEndTime())
+        {
+            currentClipIndex = i;
+            currentWordIndex = -1;  // Reset word index
+            break;
+        }
+    }
+
+    repaint();
+}
+
+void RunningView::jumpForwardClicked()
+{
+    if (!isRunning)
+        return;
+
+    // Jump forward 5 seconds
+    constexpr double jumpAmount = 5.0;
+    double totalDuration = project.getTotalDuration();
+    currentTime = juce::jmin(totalDuration, currentTime + jumpAmount);
+
+    // Update previousTime to enable proper event processing
+    // Set it slightly before currentTime so processEvents will fire
+    previousTime = juce::jmax(0.0, currentTime - 0.001);
+
+#if NARRATE_ENABLE_AUDIO_PLAYBACK
+    // Update audio position if audio is loaded
+    if (audioProcessor && audioProcessor->hasAudioLoaded())
+    {
+        audioProcessor->setAudioPosition(currentTime);
+    }
+#endif
+
+    // Update clip index based on new time
+    for (int i = 0; i < project.getNumClips(); ++i)
+    {
+        auto& clip = project.getClip(i);
+        if (currentTime >= clip.getStartTime() && currentTime < clip.getEndTime())
+        {
+            currentClipIndex = i;
+            currentWordIndex = -1;  // Reset word index
+            break;
+        }
     }
 
     repaint();

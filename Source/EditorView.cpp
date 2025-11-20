@@ -1,5 +1,6 @@
 #include "EditorView.h"
 #include "PluginProcessor.h"
+#include "UI/ProgressWindow.h"
 
 EditorView::EditorView(NarrateAudioProcessor* processor)
     : audioProcessor(processor),
@@ -13,6 +14,7 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
     // Setup clip list
     clipListBox.setModel(this);
     clipListBox.setRowHeight(50);
+    clipListBox.setMultipleSelectionEnabled(true);
     clipListBox.setColour(juce::ListBox::backgroundColourId, juce::Colours::darkgrey);
     addAndMakeVisible(clipListBox);
 
@@ -22,6 +24,9 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
 
     removeClipButton.onClick = [this] { removeClipClicked(); };
     addAndMakeVisible(removeClipButton);
+
+    selectAllButton.onClick = [this] { selectAllClicked(); };
+    addAndMakeVisible(selectAllButton);
 
     recalculateButton.onClick = [this] { recalculateTimelineClicked(); };
     addAndMakeVisible(recalculateButton);
@@ -63,6 +68,9 @@ EditorView::EditorView(NarrateAudioProcessor* processor)
 
     loadProjectButton.onClick = [this] { loadProjectClicked(); };
     addAndMakeVisible(loadProjectButton);
+
+    importProjectButton.onClick = [this] { importProjectClicked(); };
+    addAndMakeVisible(importProjectButton);
 
     saveProjectButton.onClick = [this] { saveProjectClicked(); };
     addAndMakeVisible(saveProjectButton);
@@ -168,6 +176,8 @@ void EditorView::resized()
     toolbar.removeFromLeft(5);
     loadProjectButton.setBounds(toolbar.removeFromLeft(buttonWidth).reduced(2));
     toolbar.removeFromLeft(5);
+    importProjectButton.setBounds(toolbar.removeFromLeft(buttonWidth).reduced(2));
+    toolbar.removeFromLeft(5);
     saveProjectButton.setBounds(toolbar.removeFromLeft(buttonWidth).reduced(2));
     toolbar.removeFromLeft(20);
 
@@ -201,8 +211,8 @@ void EditorView::resized()
     // Left panel - Clip list
     auto leftPanel = area.removeFromLeft(area.getWidth() / 3).reduced(5);
 
-    // Button area - two rows
-    auto buttonArea = leftPanel.removeFromBottom(85);
+    // Button area - three rows
+    auto buttonArea = leftPanel.removeFromBottom(130);
 
     // First row: Add and Remove buttons
     auto firstRow = buttonArea.removeFromTop(40);
@@ -211,9 +221,15 @@ void EditorView::resized()
 
     buttonArea.removeFromTop(5);
 
-    // Second row: Recalculate button (full width)
+    // Second row: Select All button
     auto secondRow = buttonArea.removeFromTop(40);
-    recalculateButton.setBounds(secondRow.reduced(2));
+    selectAllButton.setBounds(secondRow.reduced(2));
+
+    buttonArea.removeFromTop(5);
+
+    // Third row: Recalculate button (full width)
+    auto thirdRow = buttonArea.removeFromTop(40);
+    recalculateButton.setBounds(thirdRow.reduced(2));
 
     leftPanel.removeFromBottom(5);
     clipListBox.setBounds(leftPanel);
@@ -333,25 +349,40 @@ void EditorView::addClipClicked()
 
 void EditorView::removeClipClicked()
 {
-    if (selectedClipIndex >= 0 && selectedClipIndex < project.getNumClips())
-    {
-        project.removeClip(selectedClipIndex);
-        clipListBox.updateContent();
+    // Get all selected rows
+    auto selectedRows = clipListBox.getSelectedRows();
 
-        // Select previous clip or first clip
-        if (project.getNumClips() > 0)
-        {
-            int newSelection = juce::jmin(selectedClipIndex, project.getNumClips() - 1);
-            clipListBox.selectRow(newSelection);
-        }
-        else
-        {
-            selectedClipIndex = -1;
-            startTimeEditor.clear();
-            endTimeEditor.clear();
-            clipTextEditor.clear();
-        }
+    if (selectedRows.size() == 0)
+        return;
+
+    // Remove clips in reverse order to maintain indices
+    for (int i = selectedRows.size() - 1; i >= 0; --i)
+    {
+        int clipIndex = selectedRows[i];
+        if (clipIndex >= 0 && clipIndex < project.getNumClips())
+            project.removeClip(clipIndex);
     }
+
+    clipListBox.updateContent();
+
+    // Select previous clip or first clip
+    if (project.getNumClips() > 0)
+    {
+        int newSelection = juce::jmin(selectedRows[0], project.getNumClips() - 1);
+        clipListBox.selectRow(newSelection);
+    }
+    else
+    {
+        selectedClipIndex = -1;
+        startTimeEditor.clear();
+        endTimeEditor.clear();
+        clipTextEditor.clear();
+    }
+}
+
+void EditorView::selectAllClicked()
+{
+    clipListBox.selectRangeOfRows(0, project.getNumClips() - 1);
 }
 
 void EditorView::recalculateTimelineClicked()
@@ -398,6 +429,9 @@ void EditorView::loadProjectClicked()
 
         if (project.loadFromFile(file))
         {
+            // Reset selection to avoid writing old UI data into new project
+            selectedClipIndex = -1;
+
             clipListBox.updateContent();
             if (project.getNumClips() > 0)
                 clipListBox.selectRow(0);
@@ -409,6 +443,129 @@ void EditorView::loadProjectClicked()
                                                      "Load Failed",
                                                      "Could not load project file.");
         }
+    });
+}
+
+void EditorView::importProjectClicked()
+{
+    // Check if import feature is available (check if any format is supported)
+    auto& importFeature = audioProcessor->getImportFeature();
+    if (!importFeature.supportsSRT() && !importFeature.supportsWebVTT() &&
+        !importFeature.supportsJSON() && !importFeature.supportsPlainText())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                 "Import Not Available",
+                                                 "Import functionality is not available in this build.");
+        return;
+    }
+
+    auto chooser = std::make_shared<juce::FileChooser>("Import Subtitle File", juce::File(), "*.srt;*.vtt;*.json;*.txt");
+
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        // Create progress window and add to desktop
+        auto* progressWindow = new ProgressWindow("Importing " + file.getFileName());
+        progressWindow->setAlwaysOnTop(true);
+        progressWindow->addToDesktop();
+        progressWindow->showModal();
+
+        // Use SafePointer for thread-safe access
+        juce::Component::SafePointer<ProgressWindow> safeProgressWindow(progressWindow);
+
+        // Run import on background thread
+        juce::Thread::launch([this, file, safeProgressWindow]()
+        {
+            // Create progress callback (thread-safe via MessageManager)
+            auto progressCallback = [safeProgressWindow](double progress, const juce::String& message) -> bool
+            {
+                if (safeProgressWindow != nullptr)
+                {
+                    juce::MessageManager::callAsync([safeProgressWindow, progress, message]()
+                    {
+                        if (safeProgressWindow != nullptr)
+                            safeProgressWindow->setProgress(progress, message);
+                    });
+                    return !safeProgressWindow->wasCancelled();
+                }
+                return false;  // Window was closed, cancel import
+            };
+
+            auto& importFeature = audioProcessor->getImportFeature();
+            Narrate::NarrateProject importedProject;
+
+            // Detect format and import accordingly
+            juce::String detectedFormat;
+            bool importSuccess = false;
+
+            if (importFeature.detectFormat(file, detectedFormat))
+            {
+                // Try importing with detected format
+                if (detectedFormat == "srt")
+                    importSuccess = importFeature.importSRT(file, importedProject, progressCallback);
+                else if (detectedFormat == "vtt" || detectedFormat == "webvtt")
+                    importSuccess = importFeature.importWebVTT(file, importedProject, progressCallback);
+                else if (detectedFormat == "json")
+                    importSuccess = importFeature.importJSON(file, importedProject, progressCallback);
+                else if (detectedFormat == "txt" || detectedFormat == "text")
+                    importSuccess = importFeature.importPlainText(file, importedProject, progressCallback);
+            }
+            else
+            {
+                // Fallback: try to guess based on file extension
+                auto extension = file.getFileExtension().toLowerCase();
+                if (extension == ".srt")
+                    importSuccess = importFeature.importSRT(file, importedProject, progressCallback);
+                else if (extension == ".vtt")
+                    importSuccess = importFeature.importWebVTT(file, importedProject, progressCallback);
+                else if (extension == ".json")
+                    importSuccess = importFeature.importJSON(file, importedProject, progressCallback);
+                else if (extension == ".txt")
+                    importSuccess = importFeature.importPlainText(file, importedProject, progressCallback);
+            }
+
+            // Close progress window and update UI on message thread
+            juce::MessageManager::callAsync([this, safeProgressWindow, importSuccess, importedProject, file]() mutable
+            {
+                // Close and delete progress window
+                if (safeProgressWindow != nullptr)
+                {
+                    safeProgressWindow->setVisible(false);
+                    delete safeProgressWindow.getComponent();
+                }
+
+                if (importSuccess)
+                {
+                    // Replace current project with imported project
+                    project = importedProject;
+
+                    // Reset selection to avoid writing old UI data into new project
+                    selectedClipIndex = -1;
+
+                    // Update UI
+                    clipListBox.updateContent();
+                    if (project.getNumClips() > 0)
+                        clipListBox.selectRow(0);
+                    renderStrategyCombo.setSelectedId(static_cast<int>(project.getRenderStrategy()) + 1, juce::dontSendNotification);
+
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+                                                             "Import Successful",
+                                                             "Imported " + juce::String(project.getNumClips()) + " clips from " + file.getFileName());
+                }
+                else
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                                             "Import Failed",
+                                                             "Could not import file: " + file.getFileName() +
+                                                             "\n\nSupported formats: SRT, WebVTT, JSON, Plain Text");
+                }
+            });
+        });
     });
 }
 

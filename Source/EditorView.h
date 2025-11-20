@@ -43,9 +43,11 @@ private:
     // UI event handlers
     void addClipClicked();
     void removeClipClicked();
+    void selectAllClicked();
     void recalculateTimelineClicked();
     void newProjectClicked();
     void loadProjectClicked();
+    void importProjectClicked();
     void saveProjectClicked();
     void updateClipFromUI();
     void updateUIFromClip();
@@ -61,6 +63,7 @@ private:
     juce::ListBox clipListBox;
     juce::TextButton addClipButton {"Add Clip"};
     juce::TextButton removeClipButton {"Remove Clip"};
+    juce::TextButton selectAllButton {"Select All"};
     juce::TextButton recalculateButton {"Recalculate Timeline"};
 
     // Right panel - Clip Editor
@@ -76,6 +79,7 @@ private:
     // Top toolbar
     juce::TextButton newProjectButton {"New"};
     juce::TextButton loadProjectButton {"Load"};
+    juce::TextButton importProjectButton {"Import"};
     juce::TextButton saveProjectButton {"Save"};
     juce::Label renderStrategyLabel {"", "Render:"};
     juce::ComboBox renderStrategyCombo;
