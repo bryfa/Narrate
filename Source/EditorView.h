@@ -28,6 +28,9 @@ public:
     // Get the current project
     const Narrate::NarrateProject& getProject() const { return project; }
 
+    // Get the audio playback panel (for waveform updates)
+    AudioPlaybackPanel& getAudioPlaybackPanel() { return audioPlaybackPanel; }
+
     // Create a test project with sample lyrics
     Narrate::NarrateProject createTestProject();
 

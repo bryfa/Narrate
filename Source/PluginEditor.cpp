@@ -37,6 +37,14 @@ NarrateAudioProcessorEditor::NarrateAudioProcessorEditor (NarrateAudioProcessor&
     editorView.onPreviewClicked = [this] { switchToRunningView(); };
     runningView.onStopClicked = [this] { switchToEditorView(); };
 
+    // Setup waveform position update callback for running view
+    runningView.onPositionChanged = [this]
+    {
+#if NARRATE_SHOW_LOAD_AUDIO_BUTTON
+        editorView.getAudioPlaybackPanel().updateUI();
+#endif
+    };
+
     // Start with editor view
     addAndMakeVisible (editorView);
     runningView.setVisible (false);

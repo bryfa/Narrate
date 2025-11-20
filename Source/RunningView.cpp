@@ -231,6 +231,10 @@ void RunningView::previousClipClicked()
         }
 #endif
 
+        // Trigger waveform position update callback
+        if (onPositionChanged)
+            onPositionChanged();
+
         repaint();
     }
 }
@@ -261,6 +265,10 @@ void RunningView::nextClipClicked()
             audioProcessor->setAudioPosition(currentTime);
         }
 #endif
+
+        // Trigger waveform position update callback
+        if (onPositionChanged)
+            onPositionChanged();
 
         repaint();
     }
@@ -299,6 +307,10 @@ void RunningView::jumpBackClicked()
         }
     }
 
+    // Trigger waveform position update callback
+    if (onPositionChanged)
+        onPositionChanged();
+
     repaint();
 }
 
@@ -335,6 +347,10 @@ void RunningView::jumpForwardClicked()
             break;
         }
     }
+
+    // Trigger waveform position update callback
+    if (onPositionChanged)
+        onPositionChanged();
 
     repaint();
 }

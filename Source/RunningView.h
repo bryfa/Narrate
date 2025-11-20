@@ -37,6 +37,9 @@ public:
     // Set a callback for when the Stop button is clicked
     std::function<void()> onStopClicked;
 
+    // Set a callback for when playback position changes (for waveform update)
+    std::function<void()> onPositionChanged;
+
 private:
     void timerCallback() override;
     void previousClipClicked();
