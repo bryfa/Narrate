@@ -49,6 +49,9 @@ public:
     // Reset the timeline
     void reset();
 
+    // Seek to a specific time position (resets event index to process events from this time)
+    void seekToTime (double time);
+
     // Get the complete timeline (for debugging/inspection)
     const std::vector<TimeEvent>& getTimeline() const { return timeline; }
 

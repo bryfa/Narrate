@@ -192,3 +192,19 @@ void TimelineEventManager::reset()
     timeline.clear();
     nextEventIndex = 0;
 }
+
+void TimelineEventManager::seekToTime (double time)
+{
+    // Find the first event at or after the seek time
+    nextEventIndex = 0;
+    for (size_t i = 0; i < timeline.size(); ++i)
+    {
+        if (timeline[i].time >= time)
+        {
+            nextEventIndex = i;
+            return;
+        }
+    }
+    // If no events found after seek time, set index to end
+    nextEventIndex = timeline.size();
+}

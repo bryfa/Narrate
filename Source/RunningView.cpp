@@ -219,6 +219,9 @@ void RunningView::previousClipClicked()
         currentTime = clip.getStartTime();
         currentWordIndex = -1;  // Reset word index
 
+        // Seek event manager to new time position
+        eventManager.seekToTime(currentTime);
+
         // Update previousTime to enable proper event processing
         // Set it slightly before currentTime so processEvents will fire
         previousTime = juce::jmax(0.0, currentTime - 0.001);
@@ -254,6 +257,9 @@ void RunningView::nextClipClicked()
         currentTime = clip.getStartTime();
         currentWordIndex = -1;  // Reset word index
 
+        // Seek event manager to new time position
+        eventManager.seekToTime(currentTime);
+
         // Update previousTime to enable proper event processing
         // Set it slightly before currentTime so processEvents will fire
         previousTime = juce::jmax(0.0, currentTime - 0.001);
@@ -282,6 +288,9 @@ void RunningView::jumpBackClicked()
     // Jump back 5 seconds
     constexpr double jumpAmount = 5.0;
     currentTime = juce::jmax(0.0, currentTime - jumpAmount);
+
+    // Seek event manager to new time position
+    eventManager.seekToTime(currentTime);
 
     // Update previousTime to enable proper event processing
     // Set it slightly before currentTime so processEvents will fire
@@ -323,6 +332,9 @@ void RunningView::jumpForwardClicked()
     constexpr double jumpAmount = 5.0;
     double totalDuration = project.getTotalDuration();
     currentTime = juce::jmin(totalDuration, currentTime + jumpAmount);
+
+    // Seek event manager to new time position
+    eventManager.seekToTime(currentTime);
 
     // Update previousTime to enable proper event processing
     // Set it slightly before currentTime so processEvents will fire
