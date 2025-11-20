@@ -3,6 +3,7 @@
 #include "../NarrateConfig.h"
 #include "AudioPlaybackFeature.h"
 #include "ExportFeature.h"
+#include "ImportFeature.h"
 #include "DawSyncFeature.h"
 
 #if NARRATE_ENABLE_AUDIO_PLAYBACK
@@ -13,8 +14,10 @@
 
 #if NARRATE_ENABLE_SUBTITLE_EXPORT
     #include "StandaloneExportFeature.h"
+    #include "StandaloneImportFeature.h"
 #else
     #include "NoOpExportFeature.h"
+    #include "NoOpImportFeature.h"
 #endif
 #if NARRATE_ENABLE_DAW_TRANSPORT_SYNC
     #include "PluginDawSyncFeature.h"
@@ -58,6 +61,20 @@ public:
         return std::make_unique<StandaloneExportFeature>();
 #else
         return std::make_unique<NoOpExportFeature>();
+#endif
+    }
+
+    /**
+     * Create appropriate ImportFeature implementation.
+     * - Standalone: Full import (SRT, WebVTT, JSON, etc.)
+     * - Plugin: No-op (no import in plugin)
+     */
+    static std::unique_ptr<ImportFeature> createImportFeature()
+    {
+#if NARRATE_ENABLE_SUBTITLE_EXPORT
+        return std::make_unique<StandaloneImportFeature>();
+#else
+        return std::make_unique<NoOpImportFeature>();
 #endif
     }
 
