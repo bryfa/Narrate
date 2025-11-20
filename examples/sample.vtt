@@ -1,0 +1,17 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:04.500
+Welcome to Narrate, the teleprompter and subtitle application.
+
+00:00:05.000 --> 00:00:09.000
+This is a sample WebVTT file that demonstrates the WebVTT format.
+
+cue3
+00:00:09.500 --> 00:00:13.000
+Each entry can have optional cue identifiers.
+
+00:00:13.500 --> 00:00:17.500
+You can import this file to create a Narrate project with timed clips.
+
+00:00:18.000 --> 00:00:22.000
+Perfect for web video subtitles, karaoke, or teleprompter scripts.

@@ -1,0 +1,135 @@
+{
+  "projectName": "Sample Narrate Project",
+  "totalDuration": 22.0,
+  "clips": [
+    {
+      "startTime": 1.0,
+      "endTime": 4.5,
+      "duration": 3.5,
+      "words": [
+        {
+          "text": "Welcome",
+          "relativeTime": 0.0
+        },
+        {
+          "text": "to",
+          "relativeTime": 0.5
+        },
+        {
+          "text": "Narrate,",
+          "relativeTime": 1.0
+        },
+        {
+          "text": "the",
+          "relativeTime": 1.5
+        },
+        {
+          "text": "teleprompter",
+          "relativeTime": 2.0
+        },
+        {
+          "text": "and",
+          "relativeTime": 2.5
+        },
+        {
+          "text": "subtitle",
+          "relativeTime": 3.0
+        },
+        {
+          "text": "application.",
+          "relativeTime": 3.5
+        }
+      ]
+    },
+    {
+      "startTime": 5.0,
+      "endTime": 9.0,
+      "duration": 4.0,
+      "words": [
+        {
+          "text": "This",
+          "relativeTime": 0.0
+        },
+        {
+          "text": "is",
+          "relativeTime": 0.5
+        },
+        {
+          "text": "a",
+          "relativeTime": 1.0
+        },
+        {
+          "text": "sample",
+          "relativeTime": 1.5
+        },
+        {
+          "text": "JSON",
+          "relativeTime": 2.0
+        },
+        {
+          "text": "file",
+          "relativeTime": 2.5
+        },
+        {
+          "text": "in",
+          "relativeTime": 3.0
+        },
+        {
+          "text": "Narrate's",
+          "relativeTime": 3.5
+        },
+        {
+          "text": "native",
+          "relativeTime": 4.0
+        },
+        {
+          "text": "format.",
+          "relativeTime": 4.5
+        }
+      ]
+    },
+    {
+      "startTime": 9.5,
+      "endTime": 13.0,
+      "duration": 3.5,
+      "words": [
+        {
+          "text": "You",
+          "relativeTime": 0.0
+        },
+        {
+          "text": "can",
+          "relativeTime": 0.5
+        },
+        {
+          "text": "import",
+          "relativeTime": 1.0
+        },
+        {
+          "text": "and",
+          "relativeTime": 1.5
+        },
+        {
+          "text": "export",
+          "relativeTime": 2.0
+        },
+        {
+          "text": "projects",
+          "relativeTime": 2.5
+        },
+        {
+          "text": "in",
+          "relativeTime": 3.0
+        },
+        {
+          "text": "this",
+          "relativeTime": 3.5
+        },
+        {
+          "text": "format.",
+          "relativeTime": 4.0
+        }
+      ]
+    }
+  ]
+}

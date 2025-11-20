@@ -1,0 +1,9 @@
+Welcome to Narrate, the teleprompter and subtitle application. This is a sample plain text file that will be automatically converted into timed clips.
+
+Each paragraph becomes a separate clip. The duration is automatically calculated based on the word count, assuming a typical reading speed of about 2.5 words per second.
+
+Words within each clip are evenly distributed across the clip's duration. This makes it easy to import scripts without having to manually time every word.
+
+Perfect for creating teleprompter scripts from plain text documents. Just write your script as normal paragraphs and import it into Narrate.
+
+The automatic timing can be adjusted later using Narrate's editing features. You can fine-tune word positions and clip boundaries as needed.
