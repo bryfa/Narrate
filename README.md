@@ -34,6 +34,8 @@ A JUCE-based audio plugin (VST3/Standalone) that displays lyrics, narration, or 
 
 💾 **Project Management**
 - Save/load projects (.narrate XML format)
+- Import from subtitle formats (SRT, WebVTT)
+- Export to subtitle formats (SRT, WebVTT, JSON, CSV, Plain Text)
 - Timeline recalculation (remove gaps)
 - Clip management with auto-sorting
 - Overlap detection and validation
@@ -92,7 +94,49 @@ VST3: ~/.vst3/Narrate.vst3
 
 ## Usage
 
-### Quick Start
+### Console Converter (Command-Line Tool)
+
+Narrate includes a powerful command-line tool for converting between subtitle formats:
+
+```bash
+# Convert SRT to WebVTT
+./build/NarrateConsole input.srt output.vtt
+
+# Convert WebVTT to JSON with explicit format
+./build/NarrateConsole input.vtt output.json --format json
+
+# Import SRT and save as Narrate project
+./build/NarrateConsole subtitles.srt project.narrate
+
+# Export Narrate project to CSV
+./build/NarrateConsole project.narrate data.csv --format csv
+```
+
+**Supported Formats:**
+- **SRT** (`.srt`) - SubRip subtitle format with comma-separated milliseconds
+- **WebVTT** (`.vtt`) - Web Video Text Tracks format with period-separated milliseconds
+- **JSON** (`.json`) - Full metadata export with word-level timing and formatting
+- **CSV** (`.csv`) - Word-level timing data for analysis
+- **Plain Text** (`.txt`) - Import with estimated timing based on reading speed
+- **Narrate** (`.narrate`) - Native project format
+
+**Usage:**
+```
+narrate-console <input> <output> [--format <format>]
+```
+
+**Options:**
+- `--format <format>` - Specify output format (auto-detected from extension if omitted)
+- `--help` or `-h` - Show help message
+- `--version` or `-v` - Show version information
+
+The console tool automatically:
+- Detects input format (SRT, WebVTT, JSON, plain text)
+- Converts timecode formats (comma vs period for milliseconds)
+- Distributes word timing evenly across subtitle duration
+- Preserves clip structure and timing
+
+### GUI Application Quick Start
 
 1. **Open the plugin** in your DAW or run the standalone app
 2. **Click "New"** to create a new project
@@ -330,18 +374,20 @@ Switch strategies at any time from the dropdown menu.
 
 Narrate builds as **two products** with different feature sets:
 
-| Feature | Standalone App | VST3 Plugin | Notes |
-|---------|---------------|-------------|-------|
-| Project Management | ✅ | ✅ | Save/load projects |
-| Clip/Word Editing | ✅ | ✅ | Core functionality |
-| Render Strategies | ✅ | ✅ | All three modes |
-| Timing Presets | ✅ | ✅ | Natural, Rhythmic, etc. |
-| **Audio File Loading** | ✅ | ❌ | Standalone only |
-| **Audio Playback** | ⏳ Phase 1 | ❌ | Standalone only |
-| **Waveform Display** | ⏳ Phase 1 | ❌ | Standalone only |
-| **Export SRT/WebVTT** | ⏳ Phase 1 | ❌ | Standalone only |
-| **DAW Transport Sync** | ❌ | ⏳ Phase 2 | Plugin only |
-| **DAW Automation** | ❌ | ⏳ Phase 2 | Plugin only |
+| Feature | Standalone App | VST3 Plugin | Console Tool | Notes |
+|---------|---------------|-------------|--------------|-------|
+| Project Management | ✅ | ✅ | ✅ | Save/load projects |
+| Clip/Word Editing | ✅ | ✅ | ❌ | Core functionality |
+| Render Strategies | ✅ | ✅ | ❌ | All three modes |
+| Timing Presets | ✅ | ✅ | ❌ | Natural, Rhythmic, etc. |
+| **Import Subtitles** | ✅ | ❌ | ✅ | SRT, WebVTT, JSON, TXT |
+| **Export Subtitles** | ✅ | ❌ | ✅ | SRT, WebVTT, JSON, CSV, TXT |
+| **Format Conversion** | ❌ | ❌ | ✅ | Command-line batch conversion |
+| **Audio File Loading** | ✅ | ❌ | ❌ | Standalone only |
+| **Audio Playback** | ⏳ Phase 1 | ❌ | ❌ | Standalone only |
+| **Waveform Display** | ⏳ Phase 1 | ❌ | ❌ | Standalone only |
+| **DAW Transport Sync** | ❌ | ⏳ Phase 2 | ❌ | Plugin only |
+| **DAW Automation** | ❌ | ⏳ Phase 2 | ❌ | Plugin only |
 
 **Why Different Features?**
 - **Standalone**: Designed for video creators who need audio playback and subtitle export
@@ -496,7 +542,7 @@ A: Yes! See [ARCHITECTURE.md - Extension Points](ARCHITECTURE.md#adding-custom-r
 A: No hard limit, but very large projects (1000+ clips) may impact performance. This will be optimized in future versions.
 
 **Q: Can I export subtitles?**
-A: Not yet, but SRT and WebVTT export are planned for Phase 3.
+A: Yes! The standalone app and console tool support exporting to SRT, WebVTT, JSON, CSV, and plain text formats. Use the console tool for batch conversions.
 
 **Q: Does Narrate support MIDI?**
 A: Not currently, but MIDI timecode sync is under consideration for future versions.

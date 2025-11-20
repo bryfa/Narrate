@@ -78,12 +78,14 @@ target_sources(Narrate
         # Feature implementations
         Source/Features/StandaloneAudioPlayback.cpp
         Source/Features/StandaloneExportFeature.cpp
+        Source/Features/StandaloneImportFeature.cpp
         Source/Features/PluginDawSyncFeature.cpp
 
         # UI Panels
         Source/UI/AudioPlaybackPanel.cpp
         Source/UI/ExportPanel.cpp
         Source/UI/DawSyncPanel.cpp
+        Source/UI/ProgressWindow.cpp
 )
 
 # Set C++ standard
@@ -131,9 +133,10 @@ if(BUILD_CONSOLE_APP)
     add_executable(NarrateConsole
         Source/Console/NarrateConsole.cpp
 
-        # Shared source files needed for export
+        # Shared source files needed for import/export
         Source/NarrateDataModel.cpp
         Source/Features/StandaloneExportFeature.cpp
+        Source/Features/StandaloneImportFeature.cpp
     )
 
     # Set C++ standard for console app
