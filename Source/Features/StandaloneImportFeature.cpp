@@ -1,4 +1,5 @@
 #include "StandaloneImportFeature.h"
+#include "../NarrateLogger.h"
 #include <juce_data_structures/juce_data_structures.h>
 
 // ============================================================================
@@ -112,30 +113,29 @@ bool StandaloneImportFeature::parseSRTEntry(juce::StringArray& lines, int& lineI
 
     // Parse timecode (line 2): "00:00:01,000 --> 00:00:03,500"
     juce::String timecodeLine = lines[lineIndex].trim();
-    std::cerr << "DEBUG parseSRTEntry: Timecode line: '" << timecodeLine.toStdString() << "'\n";
+    NARRATE_LOG_DEBUG("parseSRTEntry: Timecode line: '" << timecodeLine << "'");
     ++lineIndex;
 
     // Split on " --> " separator
     int separatorPos = timecodeLine.indexOf("-->");
     if (separatorPos < 0)
     {
-        std::cerr << "DEBUG parseSRTEntry: No --> separator found\n";
+        NARRATE_LOG_DEBUG("parseSRTEntry: No --> separator found");
         return false;
     }
 
     juce::String startTimeStr = timecodeLine.substring(0, separatorPos).trim();
     juce::String endTimeStr = timecodeLine.substring(separatorPos + 3).trim();
 
-    std::cerr << "DEBUG parseSRTEntry: Start: '" << startTimeStr.toStdString()
-              << "' End: '" << endTimeStr.toStdString() << "'\n";
+    NARRATE_LOG_DEBUG("parseSRTEntry: Start: '" << startTimeStr << "' End: '" << endTimeStr << "'");
 
     outEntry.startTime = parseTimecode(startTimeStr);
     outEntry.endTime = parseTimecode(endTimeStr);
-    std::cerr << "DEBUG parseSRTEntry: Parsed times: " << outEntry.startTime << " -> " << outEntry.endTime << "\n";
+    NARRATE_LOG_DEBUG("parseSRTEntry: Parsed times: " << outEntry.startTime << " -> " << outEntry.endTime);
 
     if (outEntry.startTime < 0.0 || outEntry.endTime < 0.0)
     {
-        std::cerr << "DEBUG parseSRTEntry: Invalid times (negative)\n";
+        NARRATE_LOG_DEBUG("parseSRTEntry: Invalid times (negative)");
         return false;
     }
 
@@ -173,7 +173,7 @@ bool StandaloneImportFeature::importSRT(const juce::File& file, Narrate::Narrate
 {
     if (!file.existsAsFile())
     {
-        std::cerr << "DEBUG: File does not exist\n";
+        NARRATE_LOG_ERROR("importSRT: File does not exist: " << file.getFullPathName());
         return false;
     }
 
@@ -184,11 +184,11 @@ bool StandaloneImportFeature::importSRT(const juce::File& file, Narrate::Narrate
     juce::String content = file.loadFileAsString();
     if (content.isEmpty())
     {
-        std::cerr << "DEBUG: File content is empty\n";
+        NARRATE_LOG_ERROR("importSRT: File content is empty");
         return false;
     }
 
-    std::cerr << "DEBUG: File loaded, " << content.length() << " characters\n";
+    NARRATE_LOG_INFO("importSRT: File loaded, " << content.length() << " characters");
 
     // Clear existing project
     outProject = Narrate::NarrateProject();
@@ -198,7 +198,7 @@ bool StandaloneImportFeature::importSRT(const juce::File& file, Narrate::Narrate
     juce::StringArray lines = juce::StringArray::fromLines(content);
     int lineIndex = 0;
 
-    std::cerr << "DEBUG: Split into " << lines.size() << " lines\n";
+    NARRATE_LOG_DEBUG("importSRT: Split into " << lines.size() << " lines");
 
     if (progressCallback && !progressCallback(0.1, "Parsing SRT entries..."))
         return false;
@@ -220,9 +220,9 @@ bool StandaloneImportFeature::importSRT(const juce::File& file, Narrate::Narrate
         SubtitleEntry entry;
         if (parseSRTEntry(lines, lineIndex, entry))
         {
-            std::cerr << "DEBUG: Parsed entry " << entry.index
-                      << " [" << entry.startTime << " -> " << entry.endTime << "]: "
-                      << entry.text.toStdString() << "\n";
+            NARRATE_LOG_DEBUG("importSRT: Parsed entry " << entry.index
+                             << " [" << entry.startTime << " -> " << entry.endTime << "]: "
+                             << entry.text);
 
             // Create a clip from this entry
             Narrate::NarrateClip clip;
@@ -261,14 +261,14 @@ bool StandaloneImportFeature::importSRT(const juce::File& file, Narrate::Narrate
         }
         else
         {
-            std::cerr << "DEBUG: Failed to parse entry at line " << startLineIndex
-                     << " (skipping malformed entry)\n";
+            NARRATE_LOG_WARNING("importSRT: Failed to parse entry at line " << startLineIndex
+                              << " (skipping malformed entry)");
             // Skip to next line to avoid infinite loop
             ++lineIndex;
         }
     }
 
-    std::cerr << "DEBUG: Total clips imported: " << clipCount << "\n";
+    NARRATE_LOG_INFO("importSRT: Total clips imported: " << clipCount);
 
     // Report completion
     if (progressCallback && !progressCallback(1.0, "Import complete!"))
