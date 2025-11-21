@@ -86,6 +86,8 @@ target_sources(Narrate
         Source/UI/ExportPanel.cpp
         Source/UI/DawSyncPanel.cpp
         Source/UI/ProgressWindow.cpp
+        Source/UI/ToastNotification.cpp
+        Source/UI/SummaryDialog.cpp
 )
 
 # Set C++ standard
